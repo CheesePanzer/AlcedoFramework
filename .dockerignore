@@ -21,7 +21,7 @@
 **/obj
 **/secrets.dev.yaml
 **/secrets.json
-**/appsettings.Development.json
+**/[Aa]ppsettings.[Dd]evelopment.json
 **/appsettings.*.local.json
 **/values.dev.yaml
 LICENSE

@@ -1,0 +1,53 @@
+@model JuiceCatalogPageVm
+@{
+    ViewData["Title"] = "Fresh juice catalog";
+}
+
+<section class="mx-auto max-w-7xl px-5 pt-12 pb-6">
+    <div class="grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+            <p class="mb-3 font-mono text-xs uppercase tracking-[0.35em] text-primary">Small batch catalog</p>
+            <h1 class="max-w-3xl text-5xl font-black leading-none sm:text-7xl">
+                Bright flavors,<br />served by the server.
+            </h1>
+        </div>
+        <p class="max-w-xl text-lg opacity-70 lg:justify-self-end">
+            Search and paginate with HTMX. Open a quick preview without leaving the catalog, or follow a normal link
+            for a fully rendered details page.
+        </p>
+    </div>
+</section>
+
+<section class="mx-auto max-w-7xl px-5">
+    <form method="get" asp-action="Index"
+          hx-get="@Url.Action("Index")"
+          hx-target="#result-list"
+          hx-push-url="true"
+          hx-trigger="submit, input changed delay:350ms from:#juice-keyword"
+          class="card border border-base-300 bg-base-100 shadow-sm">
+        <div class="card-body grid gap-4 md:grid-cols-[1fr_0.7fr_auto_auto] md:items-end">
+            <label class="form-control">
+                <span class="label-text mb-2 font-semibold">Search</span>
+                <input id="juice-keyword" name="keyword" value="@Model.Query.Keyword"
+                       class="input input-bordered" placeholder="Name or description" />
+            </label>
+            <label class="form-control">
+                <span class="label-text mb-2 font-semibold">Flavor</span>
+                <input name="flavor" value="@Model.Query.Flavor"
+                       class="input input-bordered" placeholder="Citrus, berry, mint..." />
+            </label>
+            <label class="label h-12 cursor-pointer justify-start gap-3 rounded-box border border-base-300 px-4">
+                <input type="checkbox" name="featured" value="true" checked="@(Model.Query.Featured == true)"
+                       class="checkbox checkbox-primary" />
+                <span class="label-text">Featured</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Filter juices</button>
+            <input type="hidden" name="pageNo" value="1" />
+            <input type="hidden" name="pageSize" value="@Model.Content.Pagination.PageSize" />
+        </div>
+    </form>
+</section>
+
+<section id="result-list" class="mx-auto max-w-7xl px-5 py-8">
+    @await Html.PartialAsync("_JuiceList", Model.Content)
+</section>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="lemonade">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Juice Lab</title>
+    @await Html.PartialAsync("_AlcedoMvcCoreHead")
+    @await Html.PartialAsync("_AlcedoMvcDaisyUIHead")
+</head>
+<body hx-ext="alcedo-core" class="min-h-screen bg-base-200 text-base-content">
+<header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur">
+    <div class="navbar mx-auto max-w-7xl px-5">
+        <div class="flex-1">
+            <a asp-controller="JuiceCatalog" asp-action="Index" class="font-black tracking-tight text-xl">
+                JUICE<span class="text-primary">LAB</span>
+            </a>
+        </div>
+        <div class="flex-none gap-2 text-sm">
+            <span class="badge badge-outline">MVC</span>
+            <span class="badge badge-primary">HTMX</span>
+        </div>
+    </div>
+</header>
+<main>
+    @RenderBody()
+</main>
+<footer class="mx-auto mt-16 max-w-7xl border-t border-base-300 px-5 py-8 text-sm opacity-60">
+    An Alcedo Framework sample catalog.
+</footer>
+<div id="juice-preview"></div>
+</body>
+</html>

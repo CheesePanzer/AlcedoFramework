@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\modules\JuiceStore\Alcedo.JuiceStore.Backend\Alcedo.JuiceStore.Backend.csproj" />
       <ProjectReference Include="..\..\..\Src\Core\Backend\Alcedo.Core.Host\Alcedo.Core.Host.csproj" />
       <ProjectReference Include="..\..\..\Src\Core\Backend\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI.csproj" />
       <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Admin\Alcedo.Framework.Admin.csproj" />

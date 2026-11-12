@@ -23,6 +23,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-**/appsettings.Development.json
+**/[Aa]ppsettings.[Dd]evelopment.json
 **/appsettings.*.local.json
 **/secrets.json

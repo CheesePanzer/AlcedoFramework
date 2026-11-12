@@ -7,6 +7,11 @@
   <Folder Name="/Samples/Alcedo.Framework.Sample/front/">
     <Project Path="Samples/Alcedo.Framework.Sample/front/Alcedo.Frontend.Sample.csproj" />
   </Folder>
+  <Folder Name="/Samples/Alcedo.Framework.Sample/modules/" />
+  <Folder Name="/Samples/Alcedo.Framework.Sample/modules/JuiceStore/">
+    <Project Path="Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Backend/Alcedo.JuiceStore.Backend.csproj" />
+    <Project Path="Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.UnitTests/Alcedo.JuiceStore.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/Src/" />
   <Folder Name="/Src/Core/" />
   <Folder Name="/Src/Core/Backend/">

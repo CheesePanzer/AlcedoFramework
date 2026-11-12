@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\..\Src\Core\Backend\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj" />
+        <ProjectReference Include="..\..\..\..\..\Src\Core\Backend\Alcedo.Core.Presentation\Alcedo.Core.Presentation.csproj" />
+        <ProjectReference Include="..\..\..\..\..\Src\Core\Backend\Alcedo.Core.Presentation.Mvc\Alcedo.Core.Presentation.Mvc.csproj" PrivateAssets="all" />
+        <ProjectReference Include="..\..\..\..\..\Src\Core\Backend\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI.csproj" PrivateAssets="all" />
+        <ProjectReference Include="..\..\..\..\..\Src\Framework\Backend\Alcedo.Framework.Shared\Alcedo.Framework.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

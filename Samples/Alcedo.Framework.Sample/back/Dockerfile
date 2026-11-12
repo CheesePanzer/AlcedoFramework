@@ -8,6 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Samples/Alcedo.Framework.Sample/back/Alcedo.Framework.Sample.csproj", "Samples/Alcedo.Framework.Sample/back/"]
+COPY ["Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Backend/Alcedo.JuiceStore.Backend.csproj", "Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Backend/"]
 COPY ["Src/Core/Backend/Alcedo.Core.Host/Alcedo.Core.Host.csproj", "Src/Core/Backend/Alcedo.Core.Host/"]
 COPY ["Src/Core/Backend/Alcedo.Core.Abstractions/Alcedo.Core.Abstractions.csproj", "Src/Core/Backend/Alcedo.Core.Abstractions/"]
 COPY ["Src/Core/Backend/Alcedo.Core.Infrastructure/Alcedo.Core.Infrastructure.csproj", "Src/Core/Backend/Alcedo.Core.Infrastructure/"]

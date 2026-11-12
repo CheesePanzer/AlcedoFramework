@@ -1,0 +1,22 @@
+@model JuiceCatalogItemDto
+
+<dialog id="juice-preview-dialog" class="modal modal-open">
+    <div class="modal-box max-w-2xl border border-base-300">
+        <form method="dialog">
+            <button type="button" class="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
+                    onclick="document.getElementById('juice-preview').innerHTML = ''">✕</button>
+        </form>
+        <p class="font-mono text-xs uppercase tracking-[0.25em] text-primary">@Model.Code</p>
+        <h3 class="mt-2 text-4xl font-black">@Model.Name</h3>
+        <p class="mt-2 text-lg opacity-65">@Model.Flavor · @Model.VolumeMl ml</p>
+        <p class="mt-6 leading-relaxed">@Model.Description</p>
+        <div class="modal-action items-center justify-between">
+            <span class="text-3xl font-black text-primary">@Model.Price.ToString("C")</span>
+            <a asp-controller="JuiceCatalog" asp-action="Detail" asp-route-id="@Model.Id" class="btn btn-primary">
+                Full details
+            </a>
+        </div>
+    </div>
+    <button type="button" class="modal-backdrop" aria-label="Close preview"
+            onclick="document.getElementById('juice-preview').innerHTML = ''"></button>
+</dialog>

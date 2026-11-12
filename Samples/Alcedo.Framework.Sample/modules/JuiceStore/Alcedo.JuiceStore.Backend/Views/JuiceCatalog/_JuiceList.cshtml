@@ -1,0 +1,31 @@
+@model JuiceCatalogListVm
+
+<div class="mb-5 flex items-center justify-between">
+    <p class="font-mono text-sm opacity-60">@Model.TotalCount blend(s) available</p>
+    <div class="htmx-indicator loading loading-spinner loading-sm text-primary"></div>
+</div>
+
+@if (Model.Items.Count == 0)
+{
+    <div class="hero min-h-72 rounded-box border border-dashed border-base-300 bg-base-100">
+        <div class="hero-content text-center">
+            <div>
+                <p class="text-4xl">No blend found</p>
+                <p class="mt-2 opacity-60">Try a broader flavor or clear the featured filter.</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @foreach (var juice in Model.Items)
+        {
+            @await Html.PartialAsync("_JuiceCard", juice)
+        }
+    </div>
+
+    <div class="mt-8 overflow-x-auto rounded-box border border-base-300 bg-base-100 p-4">
+        @await Html.PartialAsync("_PaginationControl", Model.Pagination)
+    </div>
+}

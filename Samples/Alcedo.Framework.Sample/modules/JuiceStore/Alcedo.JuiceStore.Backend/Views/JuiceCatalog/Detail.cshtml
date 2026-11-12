@@ -1,0 +1,38 @@
+@model JuiceCatalogItemDto
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<section class="mx-auto max-w-6xl px-5 py-12">
+    <a asp-controller="JuiceCatalog" asp-action="Index" class="btn btn-ghost btn-sm mb-6">← Back to catalog</a>
+    <div class="grid overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-xl lg:grid-cols-2">
+        <div class="flex min-h-96 items-center justify-center bg-gradient-to-br from-primary/25 via-secondary/15 to-accent/20">
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="@Model.Name" class="h-full max-h-[38rem] w-full object-cover" />
+            }
+            else
+            {
+                <span class="text-[12rem] font-black leading-none text-primary/20">@Model.Name[0]</span>
+            }
+        </div>
+        <div class="p-8 sm:p-12">
+            <div class="flex flex-wrap gap-2">
+                <span class="badge badge-primary badge-outline">@Model.Flavor</span>
+                <span class="badge badge-outline">@Model.VolumeMl ml</span>
+                @if (Model.IsFeatured)
+                {
+                    <span class="badge badge-secondary">featured</span>
+                }
+            </div>
+            <p class="mt-8 font-mono text-xs uppercase tracking-[0.3em] opacity-50">@Model.Code</p>
+            <h1 class="mt-2 text-5xl font-black sm:text-6xl">@Model.Name</h1>
+            <p class="mt-6 text-lg leading-relaxed opacity-75">@Model.Description</p>
+            <div class="divider my-8"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold uppercase tracking-widest opacity-50">Catalog price</span>
+                <span class="text-4xl font-black text-primary">@Model.Price.ToString("C")</span>
+            </div>
+        </div>
+    </div>
+</section>

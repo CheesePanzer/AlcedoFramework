@@ -1,0 +1,28 @@
+@model Alcedo.Core.Presentation.Mvc.ViewModels.PageNotFoundVm
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="lemonade">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found - Juice Lab</title>
+    @await Html.PartialAsync("_AlcedoMvcCoreHead")
+    @await Html.PartialAsync("_AlcedoMvcDaisyUIHead")
+</head>
+<body class="min-h-screen bg-base-200 text-base-content">
+<main class="hero min-h-screen px-5">
+    <div class="hero-content text-center">
+        <div class="max-w-xl">
+            <div class="font-mono text-8xl font-black text-primary/25">404</div>
+            <h1 class="mt-2 text-5xl font-black">This blend is not on the menu.</h1>
+            <p class="mt-5 text-lg opacity-65">
+                The requested page <code class="rounded bg-base-300 px-2 py-1">@Model.OriginalPath</code> could not be found.
+            </p>
+            <a href="/juices" class="btn btn-primary mt-9">Browse the juice catalog</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

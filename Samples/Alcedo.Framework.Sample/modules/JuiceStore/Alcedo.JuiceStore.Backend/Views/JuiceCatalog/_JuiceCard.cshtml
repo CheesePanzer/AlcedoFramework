@@ -1,0 +1,39 @@
+@model JuiceCatalogItemDto
+
+<article class="group card overflow-hidden border border-base-300 bg-base-100 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+    <figure class="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-primary/20 via-secondary/10 to-accent/20">
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <img src="@Model.ImageUrl" alt="@Model.Name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        }
+        else
+        {
+            <span class="text-7xl font-black text-primary/25">@Model.Name[0]</span>
+        }
+        @if (Model.IsFeatured)
+        {
+            <span class="badge badge-secondary absolute left-4 top-4 font-bold">featured</span>
+        }
+    </figure>
+    <div class="card-body gap-3">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <p class="font-mono text-xs uppercase tracking-widest text-primary">@Model.Flavor · @Model.VolumeMl ml</p>
+                <h2 class="card-title mt-1 text-2xl">@Model.Name</h2>
+            </div>
+            <span class="text-xl font-black">@Model.Price.ToString("C")</span>
+        </div>
+        <p class="line-clamp-2 opacity-65">@Model.Description</p>
+        <div class="card-actions mt-2 grid grid-cols-2">
+            <button type="button" class="btn btn-outline"
+                    hx-get="@Url.Action("Preview", "JuiceCatalog", new { id = Model.Id })"
+                    hx-target="#juice-preview"
+                    hx-swap="innerHTML">
+                Quick view
+            </button>
+            <a asp-controller="JuiceCatalog" asp-action="Detail" asp-route-id="@Model.Id" class="btn btn-primary">
+                Details
+            </a>
+        </div>
+    </div>
+</article>
