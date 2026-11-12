@@ -1,0 +1,18 @@
+@model Alcedo.Core.Presentation.Mvc.ViewModels.ErrorVm
+@{
+    Layout = null;
+    var title = string.IsNullOrWhiteSpace(Model.Title) ? "Something went wrong" : Model.Title;
+}
+<section role="alert">
+    <h2>@title</h2>
+    <p>The request could not be completed.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Detail))
+    {
+        <p>@Model.Detail</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.TraceId))
+    {
+        <p><small>Trace ID: <code>@Model.TraceId</code></small></p>
+    }
+    <button type="button" onclick="window.location.reload()">Try again</button>
+</section>

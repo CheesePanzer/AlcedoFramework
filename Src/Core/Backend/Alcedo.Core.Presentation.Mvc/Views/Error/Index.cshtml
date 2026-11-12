@@ -1,0 +1,29 @@
+@model Alcedo.Core.Presentation.Mvc.ViewModels.ErrorVm
+@{
+    Layout = null;
+    var status = Model.Status > 0 ? Model.Status : 500;
+    var title = string.IsNullOrWhiteSpace(Model.Title) ? "Something went wrong" : Model.Title;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@status - @title</title>
+</head>
+<body>
+<main>
+    <h1>@title</h1>
+    <p>The request could not be completed.</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Detail))
+    {
+        <p>@Model.Detail</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.TraceId))
+    {
+        <p><small>Trace ID: <code>@Model.TraceId</code></small></p>
+    }
+    <p><a href="/">Return to the home page</a></p>
+</main>
+</body>
+</html>
