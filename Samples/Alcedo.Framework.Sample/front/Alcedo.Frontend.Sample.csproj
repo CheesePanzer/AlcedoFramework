@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\modules\JuiceStore\Alcedo.JuiceStore.Frontend\Alcedo.JuiceStore.Frontend.csproj" />
         <ProjectReference Include="..\..\..\Src\Framework\Frontend\Alcedo.Frontend.Admin\Alcedo.Frontend.Admin.csproj"/>
         <ProjectReference Include="..\..\..\Src\Core\Frontend\Alcedo.Frontend.Blazor\Alcedo.Frontend.Blazor.csproj"/>
         <ProjectReference Include="..\..\..\Src\Core\Frontend\Alcedo.Frontend.Core\Alcedo.Frontend.Core.csproj"/>

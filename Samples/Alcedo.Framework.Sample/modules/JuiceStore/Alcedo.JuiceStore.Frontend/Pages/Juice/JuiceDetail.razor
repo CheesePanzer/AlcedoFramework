@@ -1,0 +1,25 @@
+@page "/juicestore/juices/{id:guid}"
+@inherits MasterDataDetailPageBase<JuiceDto, JuiceSearchQuery, JuiceCreateCommand, JuiceUpdateCommand>
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.JuiceStore.Frontend.BackendInterface
+@inject IJuiceClient JuiceClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MasterDataDetailPageToolBar TDto="JuiceDto"
+                                 Dto="Dto"
+                                 Title="Juice Detail"
+                                 BackHref="/juicestore/juices"
+                                 StateController="Client"
+                                 LogController="Client"
+                                 OnRefresh="RefreshData"
+                                 OnEdit="OpenEdit" />
+
+    <MasterDataDetailPageFormCard TDto="JuiceDto"
+                                  Dto="Dto" />
+</MudContainer>
+
+@code {
+    protected override IMasterDataController<JuiceDto, JuiceSearchQuery, JuiceCreateCommand, JuiceUpdateCommand>
+        Client => JuiceClient;
+}

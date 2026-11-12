@@ -1,0 +1,11 @@
+@page "/juicestore/juices"
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.JuiceStore.Frontend.BackendInterface
+@inject IJuiceClient Client
+
+<MasterDataListPage TDto="JuiceDto"
+                    TSearch="JuiceSearchQuery"
+                    Title="Juices"
+                    CreateHref="/juicestore/juices/new"
+                    StateClient="Client"
+                    SearchClient="Client" />

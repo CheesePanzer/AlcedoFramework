@@ -2,6 +2,7 @@
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Samples/Alcedo.Framework.Sample/front/Alcedo.Frontend.Sample.csproj", "Samples/Alcedo.Framework.Sample/front/"]
+COPY ["Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Frontend/Alcedo.JuiceStore.Frontend.csproj", "Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Frontend/"]
 COPY ["Src/Framework/Frontend/Alcedo.Frontend.Admin/Alcedo.Frontend.Admin.csproj", "Src/Framework/Frontend/Alcedo.Frontend.Admin/"]
 COPY ["Src/Core/Frontend/Alcedo.Frontend.Abstraction/Alcedo.Frontend.Abstraction.csproj", "Src/Core/Frontend/Alcedo.Frontend.Abstraction/"]
 COPY ["Src/Core/Frontend/Alcedo.Frontend.Blazor/Alcedo.Frontend.Blazor.csproj", "Src/Core/Frontend/Alcedo.Frontend.Blazor/"]

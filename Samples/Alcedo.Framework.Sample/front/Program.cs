@@ -8,6 +8,7 @@ using Alcedo.Frontend.Identity.Handlers;
 using Alcedo.Frontend.Notification;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Alcedo.Frontend.Sample;
+using Alcedo.JuiceStore.Frontend;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -17,7 +18,8 @@ AlcedoModulesRegistry registry =
             new AlcedoIdentityModule(),
             new AlcedoAdminModule(), 
             new AlcedoNotificationModule(), 
-            new AlcedoFormulaEngineModule());
+            new AlcedoFormulaEngineModule(),
+            new JuiceStoreFrontendModule());
 
 builder.AddAlcedoFrontend<App>(registry, opt =>
 {

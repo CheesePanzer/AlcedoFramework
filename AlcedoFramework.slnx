@@ -10,6 +10,7 @@
   <Folder Name="/Samples/Alcedo.Framework.Sample/modules/" />
   <Folder Name="/Samples/Alcedo.Framework.Sample/modules/JuiceStore/">
     <Project Path="Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Backend/Alcedo.JuiceStore.Backend.csproj" />
+    <Project Path="Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.Frontend/Alcedo.JuiceStore.Frontend.csproj" />
     <Project Path="Samples/Alcedo.Framework.Sample/modules/JuiceStore/Alcedo.JuiceStore.UnitTests/Alcedo.JuiceStore.UnitTests.csproj" />
   </Folder>
   <Folder Name="/Src/" />

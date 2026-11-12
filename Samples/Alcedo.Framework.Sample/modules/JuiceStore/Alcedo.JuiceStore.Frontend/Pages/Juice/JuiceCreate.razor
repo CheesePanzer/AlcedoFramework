@@ -1,0 +1,13 @@
+@page "/juicestore/juices/new"
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.JuiceStore.Frontend.BackendInterface
+@inject IJuiceClient Client
+
+<MasterDataCreatePage TDto="JuiceDto"
+                      TSearch="JuiceSearchQuery"
+                      TCreateCommand="JuiceCreateCommand"
+                      TUpdateCommand="JuiceUpdateCommand"
+                      Client="Client"
+                      Title="New Juice"
+                      BackHref="/juicestore/juices"
+                      AfterCreateHref="/juicestore/juices/{id}" />
