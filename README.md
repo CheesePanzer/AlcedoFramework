@@ -1,41 +1,43 @@
 # Alcedo Framework
 
-Alcedo Framework contains reusable Core and Framework components extracted
-from the Alcedo codebase. Both backend implementations and their reusable
-Blazor frontend libraries are included; product-specific applications are not.
+Alcedo Framework is a modular .NET framework containing reusable backend
+building blocks, Blazor frontend libraries, framework modules, tests,
+documentation, and paired backend/frontend samples.
 
-## Repository Layout
+The repository targets .NET 10. Product-specific applications are intentionally
+excluded.
 
-- `Src/Core/Backend`: backend abstractions, domain, application, infrastructure, presentation, and hosting components
-- `Src/Core/Frontend`: shared frontend abstractions, runtime, Blazor UI, and hosting components
-- `Src/Framework/Backend`: reusable backend modules such as identity, administration, notifications, and formula evaluation
-- `Src/Framework/Frontend`: frontend modules corresponding to the backend Framework modules
-- `Tests`: tests grouped by Core/Framework and Backend/Frontend
-- `Docs`: documentation grouped by Core/Framework and Backend/Frontend
-- `Samples/Alcedo.Framework.Sample/back`: backend integration sample
-- `Samples/Alcedo.Framework.Sample/front`: matching Blazor WebAssembly sample
+## Repository Structure
 
-## MVC UI Kit
-
-`Alcedo.Core.Presentation.Mvc` contains MVC and HTMX infrastructure plus the
-UI-driver abstraction. `Alcedo.Core.Presentation.Mvc.Kit.DaisyUI` contains the
-DaisyUI/Tailwind views, controls, assets, and concrete UI driver.
-
-An MVC layout opts into each package explicitly:
-
-```cshtml
-@await Html.PartialAsync("_AlcedoMvcCoreHead")
-@await Html.PartialAsync("_AlcedoMvcDaisyUIHead")
+```text
+Src/
+  Core/
+    Backend/       Domain, application, infrastructure, presentation, and hosting
+    Frontend/      Frontend abstractions, runtime, Blazor components, and hosting
+  Framework/
+    Backend/       Shared, Identity, Admin, Notification, and FormulaEngine modules
+    Frontend/      Blazor modules corresponding to the backend Framework modules
+Tests/
+  Core/            Core tests grouped by backend/frontend
+  Framework/       Framework tests grouped by backend/frontend
+Docs/
+  Core/            Core backend and frontend documentation
+  Framework/       Framework module documentation
+Samples/
+  Alcedo.Framework.Sample/
+    back/           ASP.NET Core integration sample
+    front/          Blazor WebAssembly integration sample
 ```
 
-Use `_AlcedoMvcDaisyUICdnHead` instead of `_AlcedoMvcDaisyUIHead` to load
-DaisyUI and Tailwind from their CDNs. Do not load both DaisyUI heads.
+## Documentation
 
-## Requirements
+- Core backend overview: [`Docs/Core/Backend/00-Alcedo.Core-Overview.md`](Docs/Core/Backend/00-Alcedo.Core-Overview.md)
+- Core frontend overview: [`Docs/Core/Frontend/00-Alcedo.Frontend-Overview.md`](Docs/Core/Frontend/00-Alcedo.Frontend-Overview.md)
+- Framework backend documentation: [`Docs/Framework/Backend`](Docs/Framework/Backend)
 
-- .NET SDK 10
+## Quick Start
 
-## Build And Test
+Install the .NET 10 SDK, then restore, build, and test the repository:
 
 ```shell
 dotnet restore AlcedoFramework.slnx
@@ -43,17 +45,25 @@ dotnet build AlcedoFramework.slnx --configuration Release --no-restore
 dotnet test AlcedoFramework.slnx --configuration Release --no-build
 ```
 
-The sample configuration contains placeholders only. Supply development
-credentials through environment variables, .NET user secrets, or an ignored
-local configuration file.
+To run the paired sample, first provide local PostgreSQL, Redis, JWT, encryption,
+and storage settings through environment variables, .NET user secrets, or an
+ignored `appsettings.Development.json`. The committed configuration contains
+placeholders only.
 
-## Documentation
+Start the backend:
 
-Start with `Docs/Core/Backend/00-Alcedo.Core-Overview.md` or
-`Docs/Core/Frontend/00-Alcedo.Frontend-Overview.md`. Framework backend documents
-are available under `Docs/Framework/Backend`.
+```shell
+dotnet run --project Samples/Alcedo.Framework.Sample/back/Alcedo.Framework.Sample.csproj --urls http://localhost:5149
+```
+
+In another terminal, start the Blazor frontend:
+
+```shell
+dotnet run --project Samples/Alcedo.Framework.Sample/front/Alcedo.Frontend.Sample.csproj --urls http://localhost:5173
+```
+
+The frontend sample is configured to call `http://localhost:5149`.
 
 ## License
 
-No license has been selected yet. Add a license before publishing this
-repository for third-party use.
+Licensed under the [MIT License](LICENSE).
