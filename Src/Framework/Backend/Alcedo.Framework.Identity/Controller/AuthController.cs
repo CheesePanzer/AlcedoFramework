@@ -5,6 +5,7 @@ using Alcedo.Framework.Identity.Application.Dto.User;
 using Alcedo.Framework.Identity.Application.Service.Auth;
 using Alcedo.Framework.Identity.Contracts;
 using Alcedo.Framework.Identity.Controller.Wrapper;
+using Alcedo.Framework.Shared.Controller;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,7 @@ namespace Alcedo.Framework.Identity.Controller;
 [Area("identity")]
 [ApiVersion("1.0")]
 [Resource("Auth", "Authorization")]
-public sealed class AuthController : AlcedoApiAreaControllerBase
+public sealed class AuthController : AlcedoFmApiAreaControllerBase
 {
     private readonly IAuthApplicationService _authApplicationService;
 

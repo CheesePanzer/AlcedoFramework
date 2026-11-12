@@ -3,6 +3,7 @@ using Alcedo.Framework.Identity.Contracts;
 using Alcedo.Framework.Identity.Exceptions;
 using Alcedo.Framework.Identity.Infrastructure;
 using Alcedo.Framework.Identity.Presentation;
+using Alcedo.Framework.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;

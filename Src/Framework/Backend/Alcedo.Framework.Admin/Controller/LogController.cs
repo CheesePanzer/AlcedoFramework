@@ -2,6 +2,7 @@ using Alcedo.Core.Application;
 using Alcedo.Core.Application.SearchQuery;
 using Alcedo.Core.Presentation;
 using Alcedo.Framework.Admin.Application.AccessLog;
+using Alcedo.Framework.Shared.Controller;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,7 @@ namespace Alcedo.Framework.Admin.Controller;
 [Area("admin")]
 [ApiVersion("1.0")]
 [Resource("log", "Manage logs under Admin")]
-public sealed class LogsController : AlcedoApiAreaControllerBase
+public sealed class LogsController : AlcedoFmApiAreaControllerBase
 {
     private readonly IAccessLogApplicationService _accessLogApplicationService;
 

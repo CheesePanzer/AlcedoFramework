@@ -17,7 +17,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\..\Src\Core\Backend\Alcedo.Core.Domain.Kit.Test\Alcedo.Core.Domain.Kit.Test.csproj" />
+        <ProjectReference Include="..\..\..\..\Src\Framework\Backend\Alcedo.Framework.Admin\Alcedo.Framework.Admin.csproj" />
+        <ProjectReference Include="..\..\..\..\Src\Framework\Backend\Alcedo.Framework.FormulaEngine\Alcedo.Framework.FormulaEngine.csproj" />
         <ProjectReference Include="..\..\..\..\Src\Framework\Backend\Alcedo.Framework.Identity\Alcedo.Framework.Identity.csproj"/>
+        <ProjectReference Include="..\..\..\..\Src\Framework\Backend\Alcedo.Framework.Notification\Alcedo.Framework.Notification\Alcedo.Framework.Notification.csproj" />
         <ProjectReference Include="..\..\..\..\Src\Framework\Backend\Alcedo.Framework.Shared\Alcedo.Framework.Shared.csproj"/>
     </ItemGroup>
 

@@ -1,5 +1,6 @@
 using Alcedo.Core.Presentation;
 using Alcedo.Framework.Admin.Application;
+using Alcedo.Framework.Shared.Controller;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace Alcedo.Framework.Admin.Controller;
 [ApiVersion("1.0")]
 [Area("admin")]
 [Resource("Quartz", "Manage Quartz Jobs")]
-public sealed class QuartzController : AlcedoApiAreaControllerBase
+public sealed class QuartzController : AlcedoFmApiAreaControllerBase
 {
     private readonly IQuartzAppService _quartzAppService;
 

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Alcedo.Core.Presentation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Alcedo.Framework.Shared.Controller;
@@ -16,6 +17,7 @@ public static class FClaimsPrincipalExtensions
 }
 
 [ApiController]
+[Authorize(Policy = AlcedoAuthorizePolicy.Rbac)]
 [Route("api/v{version:apiVersion}/[controller]")]
 public abstract class AlcedoFmApiControllerBase : AlcedoApiControllerBase
 {
@@ -28,6 +30,7 @@ public abstract class AlcedoFmApiControllerBase : AlcedoApiControllerBase
 }
 
 [ApiController]
+[Authorize(Policy = AlcedoAuthorizePolicy.Rbac)]
 [Area("F")]
 [Route("api/v{version:apiVersion}/[area]/[controller]")]
 public abstract class AlcedoFmApiAreaControllerBase : AlcedoApiAreaControllerBase

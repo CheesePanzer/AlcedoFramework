@@ -11,6 +11,7 @@
         <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Domain\Alcedo.Core.Domain.csproj"/>
         <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Presentation\Alcedo.Core.Presentation.csproj"/>
+        <ProjectReference Include="..\Alcedo.Framework.Shared\Alcedo.Framework.Shared.csproj" />
     </ItemGroup>
 
 </Project>

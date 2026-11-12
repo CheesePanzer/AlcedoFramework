@@ -4,6 +4,7 @@ using Alcedo.Core.Presentation;
 using Alcedo.Framework.Notification.Application.Dto;
 using Alcedo.Framework.Notification.Application.SearchQuery;
 using Alcedo.Framework.Notification.Application.Service.MessageType;
+using Alcedo.Framework.Shared.Controller;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ namespace Alcedo.Framework.Notification.Controller;
 [Area("notification")]
 [ApiVersion("1.0")]
 [Resource("MessageType", "Manage Site's Message Type runtime configuration")]
-public sealed class MessageTypesController : AlcedoApiAreaControllerBase
+public sealed class MessageTypesController : AlcedoFmApiAreaControllerBase
 {
     private readonly IMessageTypeApplicationService _service;
 

@@ -4,6 +4,7 @@ using Alcedo.Core.Presentation;
 using Alcedo.Framework.Identity.Application.Dto;
 using Alcedo.Framework.Identity.Application.SearchQuery;
 using Alcedo.Framework.Identity.Application.Service.Perm;
+using Alcedo.Framework.Shared.Controller;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,7 @@ namespace Alcedo.Framework.Identity.Controller;
 [Area("identity")]
 [ApiVersion("1.0")]
 [Resource("Permissions", "Manage Site's Permissions")]
-public sealed class PermsController : AlcedoApiAreaControllerBase
+public sealed class PermsController : AlcedoFmApiAreaControllerBase
 {
     private readonly IPermApplicationService _service;
 

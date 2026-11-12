@@ -6,7 +6,6 @@ using Alcedo.Framework.Identity;
 using Alcedo.Framework.Identity.Contracts;
 using Alcedo.Framework.Notification;
 using Alcedo.Framework.Shared;
-using Microsoft.AspNetCore.Mvc.Authorization;
 
 Serilog.Debugging.SelfLog.Enable(Console.Error);
 
@@ -24,7 +23,6 @@ builder.CreateAlcedoBuilder(registry)
         options.Infrastructure.MigrationAssembly = typeof(Program).Assembly;
         options.Infrastructure.UsePostgresMqTransfer = true;
         options.Presentation.DisplaySensitiveExceptions = true;
-        options.Presentation.AdditionalGlobalFilters.Add(new AuthorizeFilter(AlcedoAuthorizePolicy.Rbac));
     })
     .AddModules()
     .Build();
