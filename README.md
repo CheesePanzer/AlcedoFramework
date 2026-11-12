@@ -34,6 +34,7 @@ Samples/
 - Core backend overview: [`Docs/Core/Backend/00-Alcedo.Core-Overview.md`](Docs/Core/Backend/00-Alcedo.Core-Overview.md)
 - Core frontend overview: [`Docs/Core/Frontend/00-Alcedo.Frontend-Overview.md`](Docs/Core/Frontend/00-Alcedo.Frontend-Overview.md)
 - Framework backend documentation: [`Docs/Framework/Backend`](Docs/Framework/Backend)
+- Sample deployment: [`Docs/Samples/Alcedo.Framework.Sample/Deployment.md`](Docs/Samples/Alcedo.Framework.Sample/Deployment.md)
 
 ## Quick Start
 
