@@ -37,6 +37,7 @@ internal class FakeLockHandle : IAsyncDisposable
     public ValueTask DisposeAsync() { Disposed = true; return default; }
 }
 
+[Collection("Domain")]
 public class UserApplicationServiceTests
 {
     private readonly Mock<IAggRefChecker> _refCheckerMock = new();

@@ -18,6 +18,7 @@ using Moq;
 
 namespace Alcedo.Framework.Identity.Test.Application.Services;
 
+[Collection("Domain")]
 public class LoginServiceComponentTests
 {
     private readonly Mock<ILoginThrottleRedisStore> _throttleMock = new();

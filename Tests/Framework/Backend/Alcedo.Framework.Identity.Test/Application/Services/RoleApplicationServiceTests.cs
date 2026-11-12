@@ -26,6 +26,7 @@ using Moq;
 
 namespace Alcedo.Framework.Identity.Test.Application.Services;
 
+[Collection("Domain")]
 public class RoleApplicationServiceTests
 {
     private readonly Mock<IRoleQueryRepository> _queryRepoMock = new();
