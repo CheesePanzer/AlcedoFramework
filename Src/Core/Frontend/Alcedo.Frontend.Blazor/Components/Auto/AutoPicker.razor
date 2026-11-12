@@ -1,0 +1,120 @@
+@typeparam TItem
+@typeparam TQuery where TQuery : new()
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@inject IDialogService Dialog
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <DialogContent>
+        <AutoSearch TQuery="TQuery"
+                    Query="_searchQuery"
+                    SortQuery="_sortQuery"
+                    SortFields="SortFields"
+                    OnSearch="ExecuteSearch" />
+
+        @if (_pagedResult is not null)
+        {
+            <AutoTable TItem="TItem"
+                       Items="_pagedResult.Items"
+                       Selectable="true"
+                       SelectedItemsChanged="OnSelected" 
+                       @ref="_autoTable"/>
+            <Pagination Query="_paginationQuery"
+                        OnChanged="LoadData"
+                        TotalItems="_pagedResult.TotalCount" />
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No Records</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(_selectedItems.Count == 0)"
+                   OnClick="Confirm">
+            Confirm (@_selectedItems.Count)
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] [EditorRequired] public IPagedQueryController<TItem, TQuery> Client { get; set; } = null!;
+    [Parameter] public IReadOnlyList<string> SortFields { get; set; } = [];
+    [Parameter] public bool MultipleSelect { get; set; } = true;
+    [Parameter] public TQuery? InitialQuery { get; set; }
+    [Parameter] public SortQuery? InitialSortQuery { get; set; }
+    
+    private AutoTable<TItem>? _autoTable;
+    private TQuery _searchQuery = new();
+    private SortQuery _sortQuery = new();
+    private PaginationQuery _paginationQuery = new();
+    private PagedResult<TItem>? _pagedResult;
+    private IReadOnlyList<TItem> _selectedItems = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (InitialQuery is not null)
+        {
+            _searchQuery = InitialQuery;
+        }
+
+        if (InitialSortQuery is not null)
+        {
+            _sortQuery = InitialSortQuery;
+        }
+
+        await LoadData();
+    }
+
+    private async Task ExecuteSearch()
+    {
+        _selectedItems = [];
+        _paginationQuery.PageNo = 1;
+        _autoTable?.ClearSelection();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+        => _pagedResult = await RequestService.ExecuteAsync(() => Client.GetListAsync(_searchQuery, _sortQuery, _paginationQuery));
+    
+    private void Confirm()
+    {
+        if (!MultipleSelect && _selectedItems.Count > 1)
+        {
+            Dialog.ShowMessageBoxAsync("Only one item can be selected", $"{_selectedItems.Count} items selected");
+            return;
+        }
+        MudDialog.Close(DialogResult.Ok(_selectedItems));
+    }
+
+    private void OnSelected(IReadOnlyList<TItem> selected)
+        => _selectedItems = selected;
+
+    private void Cancel()
+        => MudDialog.Cancel();
+    
+    public static async Task<IReadOnlyList<TFItem>?> ShowAsync<TFItem, TFQuery>(
+        IDialogService dialogService,
+        IPagedQueryController<TFItem, TFQuery> client,
+        string title = "Select",
+        TFQuery? initialQuery = default)
+        where TFQuery : new()
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(Client)] = client,
+            [nameof(InitialQuery)] = initialQuery
+        };
+        var dialog = await dialogService.ShowAsync<AutoPicker<TFItem, TFQuery>>(
+            title, parameters, new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: IReadOnlyList<TFItem> selected }
+            ? selected
+            : null;
+    }
+}

@@ -1,0 +1,13 @@
+@page "/identity/roles/new"
+@inject IRoleClient RoleClient
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Identity.Clients.Role
+
+<MasterDataCreatePage TDto="RoleDto"
+                      TSearch="RoleSearchQuery"
+                      TCreateCommand="RoleCreateCommand"
+                      TUpdateCommand="RoleUpdateCommand"
+                      Client="RoleClient"
+                      Title="New Role"
+                      BackHref="/identity/roles"
+                      AfterCreateHref="/identity/roles/{id}"/>

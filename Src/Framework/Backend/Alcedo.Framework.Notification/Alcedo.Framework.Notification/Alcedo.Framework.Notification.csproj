@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MailKit" Version="4.16.0"/>
+        <PackageReference Include="Scriban" Version="7.2.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\Core\Backend\Alcedo.Core.Abstractions\Alcedo.Core.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\..\..\Core\Backend\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\Alcedo.Framework.Identity.Contracts\Alcedo.Framework.Identity.Contracts.csproj"/>
+        <ProjectReference Include="..\..\Alcedo.Framework.Notification.Contracts\Alcedo.Framework.Notification.Contracts\Alcedo.Framework.Notification.Contracts.csproj"/>
+        <ProjectReference Include="..\..\Alcedo.Framework.Shared\Alcedo.Framework.Shared.csproj"/>
+    </ItemGroup>
+
+</Project>

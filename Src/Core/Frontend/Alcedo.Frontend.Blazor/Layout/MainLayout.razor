@@ -1,0 +1,80 @@
+﻿@using Alcedo.Frontend.Blazor.Components
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@inject AlcedoFrontendBlazorOptions Options
+@inject ThemeStateProvider ThemeState
+@inject BarRegistry BarRegistry
+@inject IDialogService DialogService
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="ToggleDrawer"/>
+        <MudText Typo="Typo.h6">
+            <MudLink Href="/" Color="Color.Inherit" Underline="Underline.None">
+                @Options.AppDisplayName
+            </MudLink>
+        </MudText>
+        <MudSpacer/>
+
+        @foreach (var item in BarRegistry.Groups)
+        {
+            <MudIconButton Icon="@item.Icon"
+                           Color="Color.Inherit"
+                           Href="@item.Href"/>
+        }
+        
+        <MudIconButton Icon="@Icons.Material.Filled.Info"
+                       Color="Color.Inherit"
+                       OnClick="OpenVersionModal"
+                       Title="System Info" />
+
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="OnDarkModeChanged"/>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="drawerOpen" Elevation="2">
+        <NavMenu/>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _theme = new();
+    private bool _isDarkMode;
+    private bool drawerOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDarkMode = await ThemeState.IsDarkMode();
+    }
+
+    private async Task OnDarkModeChanged()
+    {
+        _isDarkMode = !_isDarkMode;
+        await (_isDarkMode ? ThemeState.SetDarkMode() : ThemeState.UnsetDarkMode());
+        StateHasChanged();
+    }
+
+    private void ToggleDrawer() => drawerOpen = !drawerOpen;
+    
+    private Task OpenVersionModal()
+    {
+        var options = new DialogOptions 
+        { 
+            CloseButton = true, 
+            MaxWidth = MaxWidth.Small, 
+            FullWidth = true
+        };
+
+        return DialogService.ShowAsync<AlcedoApplicationInfoModal>("App Info", options);
+    }
+}

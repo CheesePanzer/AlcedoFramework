@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>CheesePanzer</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Alcedo.Core.Infrastructure"/>
+        <InternalsVisibleTo Include="Alcedo.Core.Domain"/>
+        <InternalsVisibleTo Include="Alcedo.Core.Application"/>
+        <InternalsVisibleTo Include="Alcedo.Core.Presentation"/>
+        <InternalsVisibleTo Include="Alcedo.Core.Presentation.Mvc"/>
+        <InternalsVisibleTo Include="Alcedo.Core.Host"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Humanizer" Version="3.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7"/>
+        <PackageReference Include="UUIDNext" Version="4.2.4" />
+    </ItemGroup>
+
+</Project>

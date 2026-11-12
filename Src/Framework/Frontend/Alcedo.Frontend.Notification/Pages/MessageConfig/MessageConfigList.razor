@@ -1,0 +1,11 @@
+@page "/notification/configs"
+@inject IMessageConfig Client
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+
+<MasterDataListPage TDto="MessageConfigDto"
+                    TSearch="MessageConfigSearchQuery"
+                    Title="Configs"
+                    CreateHref="/notification/configs/new"
+                    StateClient="Client"
+                    SearchClient="Client"/>

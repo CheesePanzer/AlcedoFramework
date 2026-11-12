@@ -1,0 +1,134 @@
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@inject AlcedoRequestService RequestService
+@inject NavigationManager Navigation
+
+@foreach (var action in _actionRegistry)
+{
+    if (ShouldRender(action))
+    {
+        var captured = action;
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@captured.Icon"
+                   Color="@captured.Color"
+                   OnClick="@(() => ExecuteActionAsync(captured))"
+                   Class="me-2">
+            @captured.Label
+        </MudButton>
+    }
+}
+
+@code {
+    [Parameter] [EditorRequired] public IMasterDataStateController Client { get; set; } = null!;
+    [Parameter] [EditorRequired] public Guid Id { get; set; }
+    [Parameter] [EditorRequired] public MasterDataStateValue Status { get; set; }
+    [Parameter] public StateFlowBase<MasterDataStateValue, MasterDataStateTransitionTrigger> Flow { get; set; } = new MasterDataDefaultStatusFlow();
+    [Parameter] public StateActionGuardBase<MasterDataStateValue, MasterDataStateAction> Guard { get; set; } = new MasterDataDefaultOperationGuard();
+    [Parameter] [EditorRequired] public EventCallback OnDataChanged { get; set; }
+    [Parameter] [EditorRequired] public string AfterDeleteNavTarget { get; set; }
+    [Parameter] public IReadOnlyCollection<ActionMetadata> ExtraActions { get; set; } = Array.Empty<ActionMetadata>();
+    [Parameter] [EditorRequired] public EventCallback OnEdit { get; set; }
+
+    public record ActionMetadata(
+        string Label,
+        string Icon,
+        Color Color,
+        Func<AlcedoRequestService, Task> Execute,
+        MasterDataStateTransitionTrigger? Trigger = null,
+        MasterDataStateAction? Action = null,
+        bool SuppressOnDataChanged = false
+    )
+    {
+        public static ActionMetadata Archive(Func<Task> execute, Action onSuccess)
+        {
+            return new ActionMetadata(
+                Label: "Archive",
+                Icon: Icons.Material.Filled.Archive,
+                Color: Color.Secondary,
+                Action: MasterDataStateActions.Archive,
+                Execute: rs => 
+                    rs.ExecuteAsync(execute, 
+                        opt => opt
+                            .WithSuccessMsg()
+                            .ExecuteOnSuccess(onSuccess)),
+                SuppressOnDataChanged: true
+            );
+        }
+    }
+
+    private List<ActionMetadata> _actionRegistry = [];
+
+    protected override void OnParametersSet()
+    {
+        _actionRegistry = new List<ActionMetadata>
+        {
+            new(
+                Label: "Enable",
+                Icon: Icons.Material.Filled.PlayArrow,
+                Color: Color.Success,
+                Trigger: MasterDataStateTransitionTriggers.Enable,
+                Execute: rs => rs.ExecuteAsync(
+                    () => Client.EnableAsync(Id),
+                    opt => opt.WithSuccessMsg())
+            ),
+            new(
+                Label: "Disable",
+                Icon: Icons.Material.Filled.Pause,
+                Color: Color.Warning,
+                Trigger: MasterDataStateTransitionTriggers.Disable,
+                Execute: rs => rs.ExecuteAsync(
+                    () => Client.DisableAsync(Id),
+                    opt => opt.WithSuccessMsg())
+            ),
+            new(
+                Label: "Delete",
+                Icon: Icons.Material.Filled.Delete,
+                Color: Color.Error,
+                Action: MasterDataStateActions.Delete,
+                Execute: rs => rs.ExecuteAsync(
+                    () => Client.DeleteAsync(Id),
+                    opt => opt.WithConfirmation("Delete this item?").WithSuccessMsg().ExecuteOnSuccess(() => Navigation.NavigateTo(AfterDeleteNavTarget))),
+                SuppressOnDataChanged: true
+            ),
+            new(
+                Label: "Edit",
+                Icon: Icons.Material.Filled.Edit,
+                Color: Color.Warning,
+                Action: MasterDataStateActions.Update,
+                Execute: _ =>
+                {
+                    OnEdit.InvokeAsync();
+                    return Task.CompletedTask;
+                }
+            ),
+        };
+
+        _actionRegistry.AddRange(ExtraActions);
+    }
+
+    private bool ShouldRender(ActionMetadata metadata)
+    {
+        if (metadata.Trigger is not null)
+        {
+            return Flow.CheckOperationValidity(Status, metadata.Trigger);
+        }
+
+        if (metadata.Action is not null)
+        {
+            return Guard.IsAllowed(Status, metadata.Action);
+        }
+
+        return false;
+    }
+
+    private async Task ExecuteActionAsync(ActionMetadata action)
+    {
+        await action.Execute(RequestService);
+
+        if (!action.SuppressOnDataChanged)
+        {
+            await OnDataChanged.InvokeAsync();
+        }
+    }
+
+}

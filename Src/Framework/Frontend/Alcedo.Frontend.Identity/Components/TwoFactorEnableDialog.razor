@@ -1,0 +1,116 @@
+@using Alcedo.Frontend.Identity.Clients.Auth
+@inject IAuthClient AuthClient
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex flex-column gap-1">
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Outlined.QrCodeScanner" Color="Color.Primary" Size="Size.Medium"/>
+                <MudText Typo="Typo.h6" Class="font-bold">Enable Two-Factor Authentication</MudText>
+            </div>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                The QR code is shown only during this enrollment.
+            </MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex flex-column align-center px-2 py-4">
+            @if (string.IsNullOrEmpty(_qrCodeData))
+            {
+                <div class="w-100">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="d-block mb-4">
+                        Generate a new authenticator secret and scan it before closing this dialog.
+                    </MudText>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               DropShadow="false"
+                               OnClick="HandleFetchAsync"
+                               Disabled="@_isPending"
+                               FullWidth
+                               Class="py-2.5 font-bold">
+                        @if (_isPending)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>
+                            <span>Enabling...</span>
+                        }
+                        else
+                        {
+                            <span>Enable MFA</span>
+                        }
+                    </MudButton>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-center gap-4">
+                    <div class="pa-3 rounded-xl border border-solid mud-border-lines"
+                         style="background-color: var(--mud-palette-background-grey); display: inline-flex;">
+                        <img src="@_qrCodeData"
+                             width="180"
+                             height="180"
+                             alt="MFA QR Code"
+                             style="display: block; object-fit: contain; mix-blend-mode: multiply;"/>
+                    </div>
+                    <div class="text-center">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="font-medium">
+                            Scan this QR code with your authenticator app
+                        </MudText>
+                    </div>
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Secondary"
+                   OnClick="HandleClose"
+                   FullWidth
+                   Class="py-2">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string? _qrCodeData;
+    private bool _isPending;
+
+    private async Task HandleFetchAsync()
+    {
+        try
+        {
+            _isPending = true;
+            StateHasChanged();
+
+            var totp = await RequestService.ExecuteAsync(() => AuthClient.EnableTwoFactorAsync());
+
+            if (totp is null)
+            {
+                await HandleClose();
+                return;
+            }
+
+            using var qrGenerator = new QRCoder.QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(totp, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new QRCoder.Base64QRCode(qrCodeData);
+
+            _qrCodeData = "data:image/png;base64," + qrCode.GetGraphic(6, "#000000", "#FFFFFF", true);
+        }
+        finally
+        {
+            _isPending = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+        _qrCodeData = null;
+    }
+
+}

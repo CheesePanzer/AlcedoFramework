@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <Authors>CheesePanzer</Authors>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerDefaultVersion>0.1.0-alpha.0</MinVerDefaultVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

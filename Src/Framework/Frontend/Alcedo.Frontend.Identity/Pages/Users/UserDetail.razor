@@ -1,0 +1,161 @@
+@page "/identity/users/{id:guid}"
+@inherits MasterDataDetailPageBase<UserDto, UserSearchQuery, UserCreateCommand, UserUpdateCommand>
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Identity.Clients.Role
+@using Alcedo.Frontend.Identity.Clients.User
+@inject IUserClient UserClient
+@inject IRoleClient RoleClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MasterDataDetailPageToolBar TDto="UserDto"
+                                 Dto="Dto"
+                                 Title="User Detail"
+                                 BackHref="/identity/users"
+                                 StateController="Client"
+                                 LogController="Client"
+                                 Guard="new UserActionGuard()"
+                                 ExtraActions="ExtraActions"
+                                 OnRefresh="RefreshData"
+                                 OnEdit="OpenEdit"/>
+
+    <MasterDataDetailPageFormCard TDto="UserDto"
+                                  Dto="Dto"
+                                  Columns="3"/>
+
+    @if (Dto is not null && Dto.Status != MasterDataStates.Draft)
+    {
+
+            <SubEntityBatchTable TItem="RoleDto"
+                                 Title="User Belongs to Roles:"
+                                 OnAssignClicked="BatchAssignRoles"
+                                 OnBatchDelete="BatchDeleteRoles" 
+                                 FetchPagedAsync="q => UserClient.GetRolesAsync(Id,q)"
+                                 @ref="_roleTable"/>
+    }
+
+</MudContainer>
+
+@code {
+    protected override IMasterDataController<UserDto, UserSearchQuery, UserCreateCommand, UserUpdateCommand> Client => UserClient;
+
+    protected override async Task RefreshData()
+    {
+        await base.RefreshData();
+        await RefreshRolesOnly();
+    }
+
+    private SubEntityBatchTable<RoleDto>? _roleTable;
+    
+    protected override IReadOnlyList<MasterDataFormActionToolBar.ActionMetadata> ExtraActions
+    {
+        get
+        {
+            var actions = new List<MasterDataFormActionToolBar.ActionMetadata>
+            {
+                new(
+                    Label: "Archive",
+                    Icon: Icons.Material.Filled.Archive,
+                    Color: Color.Secondary,
+                    Action: MasterDataStateActions.Archive,
+                    Execute: rs => rs.ExecuteAsync(() => UserClient.ArchiveAsync(Id), opt => opt.WithSuccessMsg().ExecuteOnSuccess(() => NavigationManager.NavigateTo("/identity/users"))),
+                    SuppressOnDataChanged: true
+                ),
+                new(
+                    Label: "Reset Password",
+                    Icon: Icons.Material.Filled.Password,
+                    Color: Color.Warning,
+                    Action: UserStateActions.ResetPassword,
+                    Execute: _ => ResetPassword()
+                ),
+            };
+
+            if (Dto?.IsLocked ?? false)
+            {
+                actions.Add(new(
+                    Label: "Unlock",
+                    Icon: Icons.Material.Filled.LockOpen,
+                    Color: Color.Success,
+                    Action: UserStateActions.UnLock,
+                    Execute: rs => rs.ExecuteAsync(() => UserClient.UnlockAsync(Id), opt => opt.WithSuccessMsg())
+                ));
+            }
+            else
+            {
+                actions.Add(new(
+                    Label: "Lock",
+                    Icon: Icons.Material.Filled.Lock,
+                    Color: Color.Error,
+                    Action: UserStateActions.Lock,
+                    Execute: rs => rs.ExecuteAsync(() => UserClient.LockAsync(Id), opt => opt.WithSuccessMsg())
+                ));
+            }
+
+            if (Dto?.UseTwoFactorAuthenticator ?? false)
+            {
+                actions.Add(new(
+                    Label: "Disable Totp",
+                    Icon: Icons.Material.Filled.LockOpen,
+                    Color: Color.Error,
+                    Action: UserStateActions.DisableTotp,
+                    Execute: rs => rs.ExecuteAsync(() => UserClient.DisableTwoFactorAsync(Id), opt => opt.WithSuccessMsg())
+                ));
+            }
+
+            return actions;
+        }
+    }
+
+    private async Task RefreshRolesOnly()
+    {
+        if (_roleTable is not null)
+        {
+            await _roleTable.RefreshAsync();
+        }
+    }
+
+    private async Task BatchDeleteRoles(IReadOnlyList<RoleDto> selected)
+    {
+        if (selected.Count == 0) return;
+        await RequestService.ExecuteAsync(
+            () => UserClient.DeleteRolesAsync(Id, selected.Select(r => r.Id).ToList()),
+            opt => opt.WithConfirmation().WithSuccessMsg("Roles Deleted"));
+        await RefreshRolesOnly();
+    }
+
+    private async Task BatchAssignRoles()
+    {
+        var selected = await AutoPicker<RoleDto, RoleSearchQuery>.ShowAsync(
+            DialogService, RoleClient, "Select Roles",
+            initialQuery: new RoleSearchQuery { Status = [MasterDataStates.Enabled] });
+
+        if (selected is not null)
+        {
+            await RequestService.ExecuteAsync(
+                () => UserClient.AssignRolesAsync(Id, selected.Select(r => r.Id).ToList()),
+                opt => opt.WithSuccessMsg("Roles Assigned"));
+            await RefreshRolesOnly();
+        }
+    }
+
+    private async Task ResetPassword()
+    {
+        if (Dto is null)
+        {
+            return;
+        }
+
+        var newPassword = await RequestService.ExecuteAsync(() => UserClient.ResetPasswordAsync(Dto.Id),opt => opt.WithConfirmation());
+        if (string.IsNullOrEmpty(newPassword))
+        {
+            return;
+        }
+
+        await DialogService.ShowMessageBoxAsync("Reset Password", $"New Password: {newPassword}");
+        StateHasChanged();
+    }
+
+}

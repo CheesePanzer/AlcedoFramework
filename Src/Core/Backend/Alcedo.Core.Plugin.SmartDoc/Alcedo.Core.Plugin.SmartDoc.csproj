@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Alcedo.Core.Abstractions\Alcedo.Core.Abstractions.csproj"/>
+        <ProjectReference Include="..\Alcedo.Core.Domain\Alcedo.Core.Domain.csproj"/>
+        <ProjectReference Include="..\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj"/>
+        <ProjectReference Include="..\Alcedo.Core.Presentation.Mvc\Alcedo.Core.Presentation.Mvc.csproj"/>
+    </ItemGroup>
+
+</Project>

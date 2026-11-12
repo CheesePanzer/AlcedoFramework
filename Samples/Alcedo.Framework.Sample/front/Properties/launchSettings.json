@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Alcedo.Frontend.Sample": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:50720;http://localhost:50721"
+    }
+  }
+}

@@ -1,0 +1,96 @@
+@typeparam TDto where TDto : MasterDataDtoBase
+    @typeparam TSearch where TSearch : MasterDataSearchQueryBase, new()
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@inject AlcedoRequestService RequestService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudText Typo="Typo.h4">@Title</MudText>
+        <MudSpacer/>
+        <MasterDataTableActionToolBar TItem="TDto"
+                                      Client="StateClient"
+                                      SelectedItems="_selectedItems"
+                                      Flow="Flow"
+                                      Guard="Guard"
+                                      ExtraActions="ExtraActions"
+                                      OnDataChanged="LoadPagedResult"/>
+        @if (CreateHref is not null)
+        {
+            <MudButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Color="Color.Primary"
+                       Href="@CreateHref"
+                       Class="ms-2">
+                Add New
+            </MudButton>
+        }
+        @ToolBarActions
+    </MudToolBar>
+
+    <AutoSearch TQuery="TSearch"
+                Query="_searchQuery"
+                SortQuery="_sortQuery"
+                SortFields="SortFields"
+                OnSearch="ExecuteSearch"/>
+
+    @if (_pagedResult is not null)
+    {
+        <AutoTable TItem="TDto"
+                   Items="_pagedResult.Items"
+                   Selectable="true"
+                   SelectedItemsChanged="OnSelected"/>
+        <Pagination Query="_paginationQuery"
+                    OnChanged="LoadPagedResult"
+                    TotalItems="_pagedResult.TotalCount"/>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">Table Has No Records</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] [EditorRequired] public string Title { get; set; } = null!;
+    [Parameter] [EditorRequired] public IMasterDataStateController StateClient { get; set; } = null!;
+    [Parameter] [EditorRequired] public IPagedQueryController<TDto, TSearch> SearchClient { get; set; } = null!;
+    [Parameter] public string? CreateHref { get; set; }
+    [Parameter] public IReadOnlyList<string> SortFields { get; set; } = new MasterDataSortPreset().Build();
+    [Parameter] public RenderFragment? ToolBarActions { get; set; }
+    [Parameter] public StateFlowBase<MasterDataStateValue, MasterDataStateTransitionTrigger> Flow { get; set; } = new MasterDataDefaultStatusFlow();
+    [Parameter] public StateActionGuardBase<MasterDataStateValue, MasterDataStateAction> Guard { get; set; } = new MasterDataDefaultOperationGuard();
+    [Parameter] public IReadOnlyCollection<MasterDataTableActionToolBar<TDto>.ActionMetadata> ExtraActions { get; set; } = Array.Empty<MasterDataTableActionToolBar<TDto>.ActionMetadata>();
+    
+    private TSearch _searchQuery = new();
+    private SortQuery _sortQuery = new();
+    private PaginationQuery _paginationQuery = new();
+    private PagedResult<TDto>? _pagedResult;
+    private IReadOnlyCollection<TDto> _selectedItems = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPagedResult();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExecuteSearch()
+    {
+        _paginationQuery.PageNo = 1;
+        await LoadPagedResult();
+    }
+
+    private async Task LoadPagedResult()
+        => _pagedResult = await RequestService.ExecuteAsync(() => SearchClient.GetListAsync(_searchQuery, _sortQuery, _paginationQuery));
+
+    private void OnSelected(IReadOnlyList<TDto> selected)
+        => _selectedItems = selected.ToList();
+
+}

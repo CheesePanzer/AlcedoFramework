@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>CheesePanzer</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Domain\Alcedo.Core.Domain.csproj"/>
+        <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\..\Core\Backend\Alcedo.Core.Presentation\Alcedo.Core.Presentation.csproj"/>
+    </ItemGroup>
+
+</Project>

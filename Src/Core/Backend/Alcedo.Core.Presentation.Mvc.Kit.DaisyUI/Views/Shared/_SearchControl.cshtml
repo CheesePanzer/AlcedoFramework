@@ -1,0 +1,95 @@
+@model Alcedo.Core.Presentation.Mvc.Kit.DaisyUI.ViewModels.SearchControlVm
+
+<div class="search-container card bg-base-100 shadow-xl border border-base-200">
+    <div class="card-body p-4">
+        <div class="flex justify-between items-center mb-4 border-b border-base-200 pb-2">
+            <h2 class="card-title text-sm font-mono text-primary">FILTER_CRITERIA</h2>
+            <div class="badge badge-outline gap-2 opacity-50 font-mono text-xs">
+                AUTO_TRIGGER_ENABLED
+            </div>
+        </div>
+
+        <form id="search-form"
+              hx-get="@Model.TargetAction"
+              hx-target="#result-list"
+              hx-push-url="true"
+              class="flex flex-wrap items-end gap-4">
+
+            @foreach (var field in Model.SearchFields)
+            {
+                <div class="form-control">
+                    <label class="label py-1">
+                        <span class="label-text font-semibold text-xs uppercase opacity-70">@field.DisplayName</span>
+                    </label>
+                    @{
+                        var type = Nullable.GetUnderlyingType(field.Type) ?? field.Type;
+                        var name = field.Name;
+                        var val = field.Value;
+
+                        if (type == typeof(bool))
+                        {
+                            <select name="@name" class="select select-bordered select-sm w-32 focus:select-primary">
+                                <option value="">ALL</option>
+                                <option value="true" selected="@(val as bool? == true)">YES</option>
+                                <option value="false" selected="@(val as bool? == false)">NO</option>
+                            </select>
+                        }
+                        else if (type.IsEnum)
+                        {
+                            <select name="@name" class="select select-bordered select-sm w-40 focus:select-primary">
+                                <option value="">UNSET</option>
+                                @foreach (var item in Enum.GetValues(type))
+                                {
+                                    <option value="@((int)item)" selected="@item.Equals(val)">@item.ToString()</option>
+                                }
+                            </select>
+                        }
+                        else if (type == typeof(DateTime) || type == typeof(DateTimeOffset))
+                        {
+                            var dateStr = val switch
+                            {
+                                DateTime dt => dt.ToString("yyyy-MM-dd"),
+                                DateTimeOffset dto => dto.ToString("yyyy-MM-dd"),
+                                _ => ""
+                            };
+                            <input type="date" name="@name" value="@dateStr"
+                                   class="input input-bordered input-sm focus:input-primary"/>
+                        }
+                        else if (type == typeof(int) || type == typeof(decimal) || type == typeof(double))
+                        {
+                            <input type="number" name="@name" value="@val" step="any"
+                                   class="input input-bordered input-sm w-28 focus:input-primary"/>
+                        }
+                        else
+                        {
+                            <input type="text" name="@name" value="@val" placeholder="Keyword..."
+                                   class="input input-bordered input-sm focus:input-primary w-48"/>
+                        }
+                    }
+                </div>
+            }
+
+            <div class="flex items-center gap-2 ml-auto">
+                <button type="button"
+                        class="btn btn-sm btn-ghost gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    RESET
+                </button>
+                <button type="submit" class="btn btn-sm btn-primary gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    SEARCH
+                </button>
+            </div>
+
+            <input type="hidden" name="PageNo" value="1"/>
+        </form>
+    </div>
+</div>

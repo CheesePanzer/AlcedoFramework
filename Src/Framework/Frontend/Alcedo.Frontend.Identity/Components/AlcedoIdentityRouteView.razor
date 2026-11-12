@@ -1,0 +1,67 @@
+@inject AuthStateProvider AuthState
+@inject NavigationManager Nav
+@using System.Reflection
+@using Alcedo.Frontend.Identity.Providers
+@implements IDisposable
+
+<RouteView RouteData="@RouteData" DefaultLayout="@DefaultLayout"/>
+
+@code {
+    [Parameter] public required RouteData RouteData { get; set; }
+    [Parameter] public required Type DefaultLayout { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CheckAuthAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(CheckAuthAsync);
+    }
+
+    private async Task CheckAuthAsync()
+    {
+        var isAnonymous = RouteData.PageType
+            .GetCustomAttribute<AllowAnonymousAttribute>() is not null;
+
+        if (isAnonymous)
+        {
+            return;
+        }
+
+        var isAuthenticated = await AuthState.GetAuthenticationStateAsync();
+
+        if (!isAuthenticated)
+        {
+            await AuthState.ClearAsync();
+            return;
+        }
+
+        var isPasswordChangePage = RouteData.PageType.Name == "PasswordChange" ||
+                                   Nav.ToBaseRelativePath(Nav.Uri).StartsWith("password-change", StringComparison.OrdinalIgnoreCase);
+
+        if (isPasswordChangePage)
+        {
+            return;
+        }
+
+        var requirePasswordChange = await AuthState.NeedPasswordChangeAsync();
+        if (requirePasswordChange)
+        {
+            Nav.NavigateTo("/password-change");
+        }
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+}

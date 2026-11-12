@@ -1,0 +1,216 @@
+@page "/admin/quartz"
+@using Alcedo.Frontend.Admin.BackendInterface
+@using Alcedo.Frontend.Admin.Components
+@inject IQuartzClient QuartzClient
+@inject AlcedoRequestService RequestService
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudText Typo="Typo.h4">Quartz Scheduler</MudText>
+        <MudSpacer/>
+        @if (_status is not null)
+        {
+            <MudChip T="string" Color="@(_status.IsStarted ? Color.Success : Color.Default)" Class="me-2">
+                @(_status.IsStarted ? "Running" : "Stopped")
+            </MudChip>
+        }
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.PauseCircle"
+                   Color="Color.Warning" OnClick="PauseAll" Class="me-2">Pause All
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.PlayCircle"
+                   Color="Color.Success" OnClick="ResumeAll" Class="me-2">Resume All
+        </MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadData"/>
+    </MudToolBar>
+
+    @if (_jobs is null)
+    {
+        <MudAlert Severity="Severity.Info">No Jobs</MudAlert>
+    }
+    else
+    {
+        @foreach (var job in _jobs)
+        {
+            <MudCard Outlined="true" Class="mb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@job.Name</MudText>
+                        <MudText Typo="Typo.caption"
+                                 Class="opacity-60">@job.Group — @(job.Description ?? "No Description")</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined"
+                                   OnClick="() => TriggerJob(job)" Class="me-1">Trigger
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined"
+                                   OnClick="() => PauseJob(job)" Class="me-1">Pause
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined"
+                                   OnClick="() => ResumeJob(job)" Class="me-1">Resume
+                        </MudButton>
+                        <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined"
+                                   OnClick="() => DeleteJob(job)">Delete
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudTable T="TriggerDto" Items="@job.Triggers" Dense="true" Hover="true" Striped="true">
+                        <HeaderContent>
+                            <MudTh>Trigger Name</MudTh>
+                            <MudTh>Group</MudTh>
+                            <MudTh>State</MudTh>
+                            <MudTh>Last Run</MudTh>
+                            <MudTh>Next Run</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>@context.Group</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(context.State == "Normal" ? Color.Success : Color.Default)">
+                                    @context.State
+                                </MudChip>
+                            </MudTd>
+                            <MudTd>@(context.PreviousFireTime?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss") ?? "--")</MudTd>
+                            <MudTd>@(context.NextFireTime?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss") ?? "--")</MudTd>
+                            <MudTd>
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Pause"
+                                               Color="Color.Warning"
+                                               OnClick="() => PauseTrigger(job, context)"/>
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.PlayArrow"
+                                               Color="Color.Success"
+                                               OnClick="() => ResumeTrigger(job, context)"/>
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Edit" Color="Color.Info"
+                                               OnClick="() => OpenUpdateCron(job, context)"/>
+                                <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               OnClick="() => DeleteTrigger(job, context)"/>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        }
+    }
+
+</MudContainer>
+
+@code {
+    private List<JobDto>? _jobs;
+    private SchedulerStatusDto? _status;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        _jobs = await RequestService.ExecuteAsync(() => QuartzClient.GetJobsAsync());
+        _status = await RequestService.ExecuteAsync(() => QuartzClient.GetStatusAsync());
+    }
+
+    private async Task TriggerJob(JobDto job)
+    {
+        await RequestService.ExecuteAsync(() => QuartzClient.TriggerJobAsync(job.Group, job.Name),
+            opt => opt.WithSuccessMsg());
+
+        await LoadData();
+    }
+
+
+    private async Task PauseJob(JobDto job)
+    {
+        await RequestService.ExecuteAsync(() => QuartzClient.PauseJobAsync(job.Group, job.Name),
+            opt => opt.WithSuccessMsg());
+
+        await LoadData();
+    }
+
+
+    private async Task ResumeJob(JobDto job)
+    {
+        await RequestService.ExecuteAsync(() => QuartzClient.ResumeJobAsync(job.Group, job.Name),
+            opt => opt.WithSuccessMsg());
+
+        await LoadData();
+    }
+
+    private async Task DeleteJob(JobDto job)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete Job",
+            $"Delete job [{job.Name}] and all its triggers?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm is not true)
+        {
+            return;
+        }
+
+        await RequestService.ExecuteAsync(() => QuartzClient.DeleteJobAsync(job.Group, job.Name),
+            opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task PauseTrigger(JobDto job, TriggerDto trigger)
+    {
+        await RequestService.ExecuteAsync(
+            () => QuartzClient.PauseTriggerAsync(job.Group, job.Name, trigger.Group, trigger.Name),
+            opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task ResumeTrigger(JobDto job, TriggerDto trigger)
+    {
+        await RequestService.ExecuteAsync(
+            () => QuartzClient.ResumeTriggerAsync(job.Group, job.Name, trigger.Group, trigger.Name),
+            opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task DeleteTrigger(JobDto job, TriggerDto trigger)
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync("Delete Trigger",
+            $"Delete trigger [{trigger.Name}]?", yesText: "Delete", cancelText: "Cancel");
+        if (confirm is not true)
+        {
+            return;
+        }
+
+        await RequestService.ExecuteAsync(
+            () => QuartzClient.DeleteTriggerAsync(job.Group, job.Name, trigger.Group, trigger.Name),
+            opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task PauseAll()
+    {
+        await RequestService.ExecuteAsync(() => QuartzClient.PauseAllAsync(), opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task ResumeAll()
+    {
+        await RequestService.ExecuteAsync(() => QuartzClient.ResumeAllAsync(), opt => opt.WithSuccessMsg());
+        await LoadData();
+    }
+
+    private async Task OpenUpdateCron(JobDto job, TriggerDto trigger)
+    {
+        var parameters = new DialogParameters<UpdateCronDialog>
+        {
+            { x => x.JobName, job.Name },
+            { x => x.TriggerName, trigger.Name }
+        };
+        var dialog = await DialogService.ShowAsync<UpdateCronDialog>("Update Cron", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string cron })
+        {
+            await RequestService.ExecuteAsync(
+                () => QuartzClient.UpdateCronAsync(job.Group, job.Name, trigger.Group, trigger.Name,
+                    new UpdateCronRequest(cron)),
+                opt => opt.WithSuccessMsg());
+            await LoadData();
+        }
+    }
+
+}

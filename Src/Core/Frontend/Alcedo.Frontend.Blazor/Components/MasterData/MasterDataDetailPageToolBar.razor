@@ -1,0 +1,70 @@
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@typeparam TDto where TDto : Alcedo.Frontend.Abstraction.Dto.MasterDataDtoBase
+
+<MudToolBar Dense="true" Class="px-0 mb-4">
+    <MudLink StartIcon="@Icons.Material.Filled.ArrowBack"
+             Color="Color.Secondary"
+             Uncontrolled="true"
+             Href="@BackHref"
+             Class="d-flex align-center">
+        Back
+    </MudLink>
+    <MudText Typo="Typo.h6" Class="ml-4">@Title</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled"
+               StartIcon="@Icons.Material.Filled.Refresh"
+               Color="Color.Primary"
+               OnClick="OnRefresh"
+               Class="me-2">
+        Refresh
+    </MudButton>
+    @if (Dto is not null)
+    {
+        <MasterDataFormActionToolBar Status="Dto.Status"
+                                     Id="Dto.Id"
+                                     Client="StateController"
+                                     Guard="Guard"
+                                     Flow="Flow"
+                                     OnDataChanged="OnRefresh"
+                                     ExtraActions="ExtraActions"
+                                     AfterDeleteNavTarget="@BackHref"
+                                     OnEdit="OnEdit"/>
+        @if (ExtraButtons is not null)
+        {
+            @ExtraButtons
+        }
+
+        <MudDivider Vertical="true" FlexItem="true" Class="mx-2 my-1" />
+        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.History"
+                   Color="Color.Info" OnClick="ToggleDrawer" Class="me-2">Audit History</MudButton>
+    }
+</MudToolBar>
+
+<MasterDataLogDrawer @ref="_drawer" FetchLogsAsync="LogController.GetAuditLogsAsync" />
+
+@code {
+    [Parameter, EditorRequired] public string BackHref { get; set; } = null!;
+    [Parameter, EditorRequired] public string Title { get; set; } = null!;
+    [Parameter, EditorRequired] public TDto? Dto { get; set; }
+    [Parameter, EditorRequired] public IMasterDataStateController StateController { get; set; } = null!;
+    [Parameter, EditorRequired] public IMasterDataLogController LogController { get; set; } = null!;
+    [Parameter] public StateFlowBase<MasterDataStateValue, MasterDataStateTransitionTrigger> Flow { get; set; } = new MasterDataDefaultStatusFlow();
+    [Parameter] public StateActionGuardBase<MasterDataStateValue, MasterDataStateAction> Guard { get; set; } = new MasterDataDefaultOperationGuard();
+    [Parameter] public IReadOnlyList<MasterDataFormActionToolBar.ActionMetadata> ExtraActions { get; set; } = [];
+    [Parameter, EditorRequired] public EventCallback OnRefresh { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnEdit { get; set; }
+    [Parameter] public RenderFragment? ExtraButtons { get; set; }
+
+    private MasterDataLogDrawer? _drawer;
+
+    private async Task ToggleDrawer()
+    {
+        if (_drawer is null || Dto is null)
+        {
+            return;
+        }
+
+        await _drawer.OpenAsync(Dto.Id);
+    }
+}

@@ -1,0 +1,135 @@
+@using Alcedo.Frontend.Identity.Clients.Auth
+@inject IAuthClient AuthClient
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex flex-column align-center px-6 py-8">
+            <div class="d-flex flex-column align-center gap-3 mb-6 text-center">
+                <div class="d-flex align-center justify-center rounded-lg"
+                     style="width: 56px; height: 56px; background-color: var(--mud-palette-primary-hover);">
+                    <MudIcon Icon="@Icons.Material.Outlined.Security" Color="Color.Primary" Size="Size.Large"/>
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="font-bold">Two-Factor Authentication</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                        Please enter the 6-digit MFA code from your authenticator app
+                    </MudText>
+                </div>
+            </div>
+
+            <div style="width: 100%; max-width: 360px;">
+                <MudTextField T="string"
+                              @bind-Value="_totpCode"
+                              Label="Verification Code"
+                              Variant="Variant.Outlined"
+                              InputType="InputType.Text"
+                              Mask="@(new PatternMask("000000"))"
+                              Clearable="true"
+                              Immediate="true"
+                              AutoFocus="true"
+                              OnKeyDown="HandleKeyDownAsync"
+                              MaxLength="6"
+                              Class="font-monospace text-center"
+                              Style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center;"/>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="d-flex align-center gap-1 mt-4 text-danger" style="width: 100%; max-width: 360px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Small" Color="Color.Error"/>
+                    <MudText Typo="Typo.caption" Color="Color.Error" Class="font-bold">
+                        @_errorMessage
+                    </MudText>
+                </div>
+            }
+
+            <div class="w-100 mt-6 d-flex flex-column gap-2" style="max-width: 360px;">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           DropShadow="false"
+                           OnClick="HandleSubmitAsync"
+                           Disabled="@(_isPending || _totpCode?.Length != 6)"
+                           FullWidth
+                           Class="py-3 font-bold">
+                    @if (_isPending)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>
+                        <span>Verifying...</span>
+                    }
+                    else
+                    {
+                        <span>Verify</span>
+                    }
+                </MudButton>
+
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Secondary"
+                           OnClick="HandleCancel"
+                           FullWidth
+                           Class="py-2">
+                    Cancel
+                </MudButton>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Guid PendingToken { get; set; } = Guid.Empty;
+
+    private string _totpCode = string.Empty;
+    private bool _isPending;
+    private string? _errorMessage;
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _totpCode?.Length == 6 && !_isPending)
+        {
+            await HandleSubmitAsync();
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_totpCode) || _totpCode.Length != 6)
+        {
+            return;
+        }
+
+        try
+        {
+            _isPending = true;
+            _errorMessage = null;
+            StateHasChanged();
+
+            var result = await RequestService.ExecuteAsync(() => AuthClient.TotpLoginAsync(new TotpCommand()
+            {
+                PendingToken = PendingToken.ToString(),
+                TotpCode = _totpCode
+            }));
+
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Invalid verification code. Please try again.";
+            _totpCode = string.Empty; // 验证失败清空输入
+            Console.WriteLine($"TOTP Validate Error: {ex.Message}");
+        }
+        finally
+        {
+            _isPending = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleCancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

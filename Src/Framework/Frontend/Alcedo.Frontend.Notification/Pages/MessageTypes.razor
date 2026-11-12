@@ -1,0 +1,8 @@
+@page "/notification/types"
+@using Alcedo.Frontend.Blazor.Components.Shared
+@using Alcedo.Frontend.Notification.BackendInterface
+@inject IMessageType TypeClient
+<GenericListPage TDto="MessageTypeDto"
+                 TSearch="MessageTypeSearchQuery"
+                 Title="Types"
+                 SearchClient="TypeClient"/>

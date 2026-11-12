@@ -1,0 +1,42 @@
+@page "/notification/templates/{id:guid}"
+@inherits MasterDataDetailPageBase<Alcedo.Frontend.Notification.BackendInterface.MessageTemplateDto, Alcedo.Frontend.Notification.BackendInterface.MessageTemplateSearchQuery, Alcedo.Frontend.Notification.BackendInterface.MessageTemplateCreateCommand, Alcedo.Frontend.Notification.BackendInterface.MessageTemplateUpdateCommand>
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+@using Alcedo.Frontend.Notification.Components
+@inject IMessageTemplate MessageTemplateClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MasterDataDetailPageToolBar TDto="MessageTemplateDto"
+                                 Dto="Dto"
+                                 Title="Message Template Detail"
+                                 BackHref="/notification/templates"
+                                 StateController="Client"
+                                 LogController="Client"
+                                 OnRefresh="RefreshData"
+                                 OnEdit="OpenEdit">
+        <ExtraButtons>
+            <MudButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                       Color="Color.Info"
+                       OnClick="OpenTestDialog"
+                       Class="me-2">
+                Test
+            </MudButton>
+        </ExtraButtons>
+    </MasterDataDetailPageToolBar>
+
+    <MasterDataDetailPageFormCard TDto="MessageTemplateDto"
+                                  Dto="Dto"/>
+</MudContainer>
+
+
+@code {
+    protected override IMasterDataController<MessageTemplateDto, MessageTemplateSearchQuery, MessageTemplateCreateCommand, MessageTemplateUpdateCommand> Client => MessageTemplateClient;
+
+    private async Task OpenTestDialog(MouseEventArgs arg)
+    {
+        await MessageTemplateTestDialog.ShowAsync(DialogService, Id);
+    }
+
+}

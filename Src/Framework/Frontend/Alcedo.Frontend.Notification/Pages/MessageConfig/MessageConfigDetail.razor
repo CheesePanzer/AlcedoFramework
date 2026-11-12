@@ -1,0 +1,158 @@
+@page "/notification/configs/{id:guid}"
+@inherits MasterDataDetailPageBase<MessageConfigDto, MessageConfigSearchQuery, MessageConfigCreateCommand, MessageConfigUpdateCommand>
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+@using Alcedo.Frontend.Notification.Components
+@inject IMessageConfig MessageConfigClient
+@inject IMessageType MessageTypeClient
+@inject IMessageTemplate MessageTemplateClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MasterDataDetailPageToolBar TDto="MessageConfigDto"
+                                 Dto="Dto"
+                                 Title="Message Config Detail"
+                                 BackHref="/notification/configs"
+                                 StateController="Client"
+                                 LogController="Client"
+                                 OnRefresh="RefreshData"
+                                 OnEdit="OpenEdit">
+        <ExtraButtons>
+            @if (Dto is not null && Dto.Status == MasterDataStates.Enabled)
+            {
+                <MudButton Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Color="Color.Info"
+                           OnClick="TestSend"
+                           Class="me-2">
+                    Test Send
+                </MudButton>
+            }
+            @if (Dto is not null && Dto.ShouldSkip)
+            {
+                <MudButton Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Block"
+                           Color="Color.Success"
+                           OnClick="SetUnskip"
+                           Class="me-2">
+                    Set Unskippable
+                </MudButton>
+            }
+            @if (Dto is not null && !Dto.ShouldSkip)
+            {
+                <MudButton Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.PlayCircle"
+                           Color="Color.Warning"
+                           OnClick="SetSkip"
+                           Class="me-2">
+                    Set Skippable
+                </MudButton>
+            }
+        </ExtraButtons>
+    </MasterDataDetailPageToolBar>
+
+    <MasterDataDetailPageFormCard TDto="MessageConfigDto"
+                                  Dto="Dto"/>
+    
+    @if (Dto is not null)
+    {
+        <SubEntityBatchTable TItem="MessageTemplateDto"
+                             Title="Config Has Templates:"
+                             OnAssignClicked="BatchAssignTemplates"
+                             OnBatchDelete="BatchDeleteTemplates" 
+                             FetchSimpleAsync="() => MessageConfigClient.GetTemplatesByConfigIdAsync(Id)" 
+                             @ref="_table"/>
+    }
+
+</MudContainer>
+
+@code {
+    protected override IMasterDataController<MessageConfigDto, MessageConfigSearchQuery, MessageConfigCreateCommand, MessageConfigUpdateCommand> Client => MessageConfigClient;
+
+    protected override RenderFragment? EditChildContent(MessageConfigUpdateCommand command) =>
+        @<MudItem xs="12" sm="3">
+            <PickerInput TItem="MessageTypeDto"
+                         TQuery="MessageTypeSearchQuery"
+                         Client="MessageTypeClient"
+                         Label="Message Type"
+                         DisplayText="@Dto?.MessageTypeCode"
+                         DisplayTextFunc="@(t => $"[{t.Code}] {t.Name}")"
+                         OnSelected="selected => OnMessageTypeSelected(command, selected)"/>
+        </MudItem>;
+
+    private Task OnMessageTypeSelected(MessageConfigUpdateCommand command, MessageTypeDto? selected)
+    {
+        command.MessageTypeCode = selected?.Code ?? "";
+        return Task.CompletedTask;
+    }
+
+    protected override async Task RefreshData()
+    {
+        await base.RefreshData();
+
+        await RefreshTable();
+    }
+
+    private SubEntityBatchTable<MessageTemplateDto>? _table;
+
+    private Task RefreshTable()
+    {
+        if (_table is not null)
+        {
+            return _table.RefreshAsync();
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private async Task BatchAssignTemplates()
+    {
+        var selected = await AutoPicker<MessageTemplateDto, MessageTemplateSearchQuery>.ShowAsync(
+            DialogService, MessageTemplateClient, "Select Templates");
+        
+        if (selected is not null)
+        {
+            await RequestService.ExecuteAsync(
+                () => MessageConfigClient.AssignMessageTemplatesAsync(Id, selected.Select(r => r.Id).ToList()),
+                opt => opt.WithSuccessMsg("Perms Assigned"));
+            await RefreshTable();
+        }
+    }
+
+    private async Task BatchDeleteTemplates(IReadOnlyList<MessageTemplateDto> selected)
+    {
+        if (selected.Count == 0)
+        {
+            return;
+        }
+
+        await RequestService.ExecuteAsync(
+            () => MessageConfigClient.DeleteMessageTemplatesAsync(Id, selected.Select(r => r.Id).ToList()), opt => opt.WithConfirmation().WithSuccessMsg("Templates Deleted"));
+        await RefreshTable();
+    }
+
+    private async Task TestSend()
+    {
+        if (Dto is null || string.IsNullOrWhiteSpace(Dto.MessageTypeCode))
+        {
+            return;
+        }
+        await MessageConfigTestDialog.ShowAsync(DialogService, Dto.Id, Dto.MessageTypeCode);
+    }
+
+    private async Task SetUnskip()
+    {
+        await RequestService.ExecuteAsync(() => MessageConfigClient.UnSkipConfig(Id));
+        await RefreshData();
+    }
+
+    private async Task SetSkip(MouseEventArgs arg)
+    {
+        await RequestService.ExecuteAsync(() => MessageConfigClient.SkipConfig(Id));
+        await RefreshData();
+    }
+
+}

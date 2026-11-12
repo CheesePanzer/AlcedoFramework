@@ -1,0 +1,134 @@
+@typeparam TItem
+@using System.Reflection
+@using Alcedo.Frontend.Abstraction.Attributes
+@using Alcedo.Frontend.Abstraction.StateMachine
+
+<MudTable T="TItem"
+          Items="@Items"
+          Hover="true"
+          Dense="true"
+          Striped="true"
+          MultiSelection="@Selectable"
+          Comparer="@Comparer"
+          SelectOnRowClick="@SelectOnRowClick"
+          SelectedItemsChanged="@OnSelectionChanged"
+          OnRowClick="@HandleRowClick"
+          @ref="_mudTable">
+    <HeaderContent>
+        @foreach (var prop in GetProperties())
+        {
+            <MudTh>@GetLabel(prop)</MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        @foreach (var prop in GetProperties())
+        {
+            <MudTd>
+                @RenderCell(prop, context)
+            </MudTd>
+        }
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter] [EditorRequired] public required IReadOnlyCollection<TItem> Items { get; set; }
+    [Parameter] public bool Selectable { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> SelectedItemsChanged { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public IEqualityComparer<TItem> Comparer { get; set; } = _defaultComparer;
+    [Parameter] public bool SelectOnRowClick { get; set; } = true;
+    
+    private MudTable<TItem>? _mudTable;
+    
+    private static readonly IEqualityComparer<TItem> _defaultComparer = 
+        EqualityComparer<TItem>.Default;
+
+    private Dictionary<string, AutoTableLinkAttribute> _linkMap = [];
+
+    protected override void OnInitialized()
+    {
+        _linkMap = typeof(TItem)
+            .GetCustomAttributes<AutoTableLinkAttribute>()
+            .ToDictionary(a => a.PropName, a => a);
+    }
+
+    private IEnumerable<PropertyInfo> GetProperties()
+        => AutoComponentOrderedProperties.Get(typeof(TItem))
+                .Where(p => p.GetCustomAttribute<AutoTableIgnoreRenderAttribute>() is null
+                            && !IsCollectionType(p.PropertyType));
+
+    private static string GetLabel(PropertyInfo prop) =>
+        prop.GetCustomAttribute<AutoRenderLabelAttribute>()?.Label ?? prop.Name;
+
+    private RenderFragment RenderCell(PropertyInfo prop, TItem item) => builder =>
+    {
+        var value = prop.GetValue(item);
+
+        if (_linkMap.TryGetValue(prop.Name, out var linkAttr))
+        {
+            var url = BuildLinkUrl(linkAttr.Template, item);
+            builder.OpenComponent<MudLink>(0);
+            builder.AddAttribute(1, "Href", url);
+            builder.AddAttribute(2, "ChildContent", (RenderFragment)(b => b.AddContent(0, value?.ToString() ?? "------")));
+            builder.CloseComponent();
+        }
+        else
+        {
+            builder.AddContent(0, FormatValue(prop, value));
+        }
+    };
+
+    private static string FormatValue(PropertyInfo prop, object? value)
+    {
+        if (value is null)
+        {
+            return "--";
+        }
+
+        var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+        return type switch
+        {
+            _ when type == typeof(bool) => (bool)value ? "Yes" : "No",
+            _ when type == typeof(DateTime) => ((DateTime)value).ToString("yyyy-MM-dd HH:mm"),
+            _ when type == typeof(DateTimeOffset) => ((DateTimeOffset)value).LocalDateTime.ToString("yyyy-MM-dd HH:mm"),
+            _ when type.IsEnum => value.ToString()!,
+            _ when typeof(ValueAtom).IsAssignableFrom(type) => (value as ValueAtom)?.Value ?? "--",
+            _ => value.ToString() ?? "--"
+        };
+    }
+
+    private static string BuildLinkUrl(string template, TItem item)
+    {
+        var path = template;
+        foreach (var prop in typeof(TItem).GetProperties())
+        {
+            var val = prop.GetValue(item);
+            path = path.Replace($"{{{prop.Name}}}", val?.ToString() ?? "");
+        }
+
+        return path;
+    }
+    
+    public void ClearSelection()
+    {
+        if (_mudTable is null) return;
+        _mudTable?.SelectedItems?.Clear();
+    }
+
+    private void OnSelectionChanged(HashSet<TItem> selected) =>
+        SelectedItemsChanged.InvokeAsync(selected.ToList());
+
+    private static bool IsCollectionType(Type type) =>
+        type != typeof(string)
+        && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+
+    private Task HandleRowClick(TableRowClickEventArgs<TItem> args) =>
+        OnRowClick.InvokeAsync(args.Item);
+
+    private static readonly IEqualityComparer<TItem> _referenceComparer =
+        EqualityComparer<TItem>.Create(
+            (a, b) => ReferenceEquals(a, b),
+            x => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(x));
+
+}

@@ -1,0 +1,219 @@
+@using Alcedo.Frontend.Core
+@using Alcedo.Frontend.Core.HttpClient
+@inject IAlcedoApplicationInfo AppInfo
+@inject AlcedoHealthClient HealthClient
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">System Version Diagnostic</MudText>
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <MudTabs ActivePanelIndexChanged="OnTabChanged" 
+                 Elevation="0" 
+                 Rounded="true" 
+                 ApplyEffectsToPanels="true" 
+                 PanelClass="pt-4">
+            
+            <!-- Tab 1: Frontend -->
+            <MudTabPanel Text="Frontend" Icon="@Icons.Material.Filled.Devices">
+                <MudContainer Style="min-height: 280px; max-height: 420px; overflow-y: auto;" Class="px-0 mt-4">
+                    <MudGrid Class="mb-4">
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Outlined="true" Class="pa-3 d-flex flex-column align-center justify-center">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="text-uppercase fw-bold">Frontend App</MudText>
+                                <MudTooltip Text="@($"Full Version: {AppInfo.AppVersion}")" Arrow="true" Placement="Placement.Top">
+                                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Class="mt-1">
+                                        @AppInfo.AppVersion.ToShortVersion()
+                                    </MudChip>
+                                </MudTooltip>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Outlined="true" Class="pa-3 d-flex flex-column align-center justify-center">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="text-uppercase fw-bold">Frontend Core</MudText>
+                                <MudTooltip Text="@($"Full Version: {AppInfo.CoreVersion}")" Arrow="true" Placement="Placement.Top">
+                                    <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small" Class="mt-1">
+                                        @AppInfo.CoreVersion.ToShortVersion()
+                                    </MudChip>
+                                </MudTooltip>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-3" />
+
+                    <MudText Typo="Typo.subtitle2" Class="mb-2 text-muted">Registered Frontend Modules (@(AppInfo.ModuleVersions?.Count ?? 0))</MudText>
+
+                    @if (AppInfo.ModuleVersions.Count > 0)
+                    {
+                        <MudTable Items="@AppInfo.ModuleVersions" Dense="true" Hover="true" Elevation="0" Outlined="true">
+                            <HeaderContent>
+                                <MudTh>Module Code</MudTh>
+                                <MudTh Style="text-align: right;">Version</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Module Code">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">@context.Key</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Version" Style="text-align: right;">
+                                    <MudTooltip Text="@($"Full Version: {context.Value}")" Arrow="true" Placement="Placement.Left">
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">
+                                            @context.Value.ToShortVersion()
+                                        </MudChip>
+                                    </MudTooltip>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                            No registered frontend modules found.
+                        </MudAlert>
+                    }
+                </MudContainer>
+            </MudTabPanel>
+
+            <!-- Tab 2: Backend -->
+            <MudTabPanel Text="Backend" Icon="@Icons.Material.Filled.Dns">
+                <MudContainer Style="min-height: 280px; max-height: 420px; overflow-y: auto;" Class="px-0 mt-4">
+                    @if (_isLoadingBackend)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-8 gap-2">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Fetching backend system info...</MudText>
+                        </div>
+                    }
+                    else if (_backendInfo is not null)
+                    {
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="12" sm="6">
+                                <MudPaper Outlined="true" Class="pa-3 d-flex flex-column align-center justify-center">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="text-uppercase fw-bold">Backend App</MudText>
+                                    <MudTooltip Text="@($"Full Version: {_backendInfo.AppVersion}")" Arrow="true" Placement="Placement.Top">
+                                        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small" Class="mt-1">
+                                            @_backendInfo.AppVersion.ToShortVersion()
+                                        </MudChip>
+                                    </MudTooltip>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudPaper Outlined="true" Class="pa-3 d-flex flex-column align-center justify-center">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="text-uppercase fw-bold">Backend Core</MudText>
+                                    <MudTooltip Text="@($"Full Version: {_backendInfo.CoreVersion}")" Arrow="true" Placement="Placement.Top">
+                                        <MudChip T="string" Color="Color.Info" Variant="Variant.Filled" Size="Size.Small" Class="mt-1">
+                                            @_backendInfo.CoreVersion.ToShortVersion()
+                                        </MudChip>
+                                    </MudTooltip>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudDivider Class="my-3" />
+
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <MudText Typo="Typo.subtitle2" Class="text-muted">Registered Backend Modules (@(_backendInfo.ModuleVersions?.Count ?? 0))</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                           Size="Size.Small" 
+                                           Color="Color.Default" 
+                                           Title="Refresh Backend Info"
+                                           OnClick="RefreshBackendInfoAsync" />
+                        </div>
+
+                        @if (_backendInfo.ModuleVersions.Count > 0)
+                        {
+                            <MudTable Items="@_backendInfo.ModuleVersions" Dense="true" Hover="true" Elevation="0" Outlined="true">
+                                <HeaderContent>
+                                    <MudTh>Module Code</MudTh>
+                                    <MudTh Style="text-align: right;">Version</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Module Code">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@context.Key</MudText>
+                                    </MudTd>
+                                    <MudTd DataLabel="Version" Style="text-align: right;">
+                                        <MudTooltip Text="@($"Full Version: {context.Value}")" Arrow="true" Placement="Placement.Left">
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">
+                                                @context.Value.ToShortVersion()
+                                            </MudChip>
+                                        </MudTooltip>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                                No registered backend modules found.
+                            </MudAlert>
+                        }
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="my-4">
+                            Failed to connect to backend endpoint or retrieve system diagnostics.
+                        </MudAlert>
+                        <div class="d-flex justify-center mt-2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="RefreshBackendInfoAsync">Retry</MudButton>
+                        </div>
+                    }
+                </MudContainer>
+            </MudTabPanel>
+
+        </MudTabs>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private AlcedoBackendApplicationInfo? _backendInfo;
+    private bool _isLoadingBackend;
+    private bool _hasLoadedBackend;
+
+    private async Task OnTabChanged(int index)
+    {
+        // 点击切换到第 2 页 (Backend Tab)
+        if (index == 1 && !_hasLoadedBackend)
+        {
+            await FetchBackendInfoAsync();
+        }
+    }
+
+    private Task RefreshBackendInfoAsync()
+    {
+        _hasLoadedBackend = false;
+        return FetchBackendInfoAsync();
+    }
+
+    private async Task FetchBackendInfoAsync()
+    {
+        _isLoadingBackend = true;
+        StateHasChanged();
+
+        try
+        {
+            _backendInfo = await HealthClient.GetSystemInfoAsync();
+            if (_backendInfo is not null)
+            {
+                _hasLoadedBackend = true;
+            }
+        }
+        finally
+        {
+            _isLoadingBackend = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

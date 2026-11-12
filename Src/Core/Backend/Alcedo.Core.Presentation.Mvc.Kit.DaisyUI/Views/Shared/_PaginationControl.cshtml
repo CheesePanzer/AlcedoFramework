@@ -1,0 +1,100 @@
+@model Alcedo.Core.Presentation.Mvc.Kit.DaisyUI.ViewModels.PaginationControlVm
+@using Microsoft.AspNetCore.WebUtilities
+
+@{
+    string PageUrl(int pageNo, int? pageSizeOverride = null)
+    {
+        var query = QueryHelpers.ParseQuery(Model.CurrentQueryString);
+        query["pageNo"] = pageNo.ToString();
+        if (pageSizeOverride.HasValue)
+        {
+            query["pageSize"] = pageSizeOverride.Value.ToString();
+        }
+
+        var qs = string.Join("&", query.SelectMany(kv =>
+            kv.Value.Select(v => $"{kv.Key}={Uri.EscapeDataString(v!)}")));
+        return Model.TargetAction + "?" + qs;
+    }
+
+    string PageSizeUrl(int pageSize) => PageUrl(1, pageSize);
+
+    bool hasPrev = Model.PageNo > 1;
+    bool hasNext = Model.PageNo < Model.TotalPages;
+
+    int[] pageSizeOptions = [10, 20, 50, 100];
+}
+
+<div class="flex items-center gap-4">
+
+    <div class="flex items-center gap-2">
+        <span class="text-sm">每页</span>
+        <div class="join">
+            @foreach (var size in pageSizeOptions)
+            {
+                <button class="join-item btn btn-sm @(size == Model.PageSize ? "btn-active" : "")"
+                        hx-get="@PageSizeUrl(size)"
+                        hx-target="#result-list"
+                        hx-push-url="true">@size</button>
+            }
+        </div>
+        <span class="text-sm">条</span>
+    </div>
+
+    <div class="join">
+        <button class="join-item btn btn-sm @(!hasPrev ? "btn-disabled" : "")"
+                hx-get="@PageUrl(Model.PageNo - 1)"
+                hx-target="#result-list"
+                hx-push-url="true">«
+        </button>
+
+        @foreach (var page in GetPageNumbers(Model.PageNo, Model.TotalPages))
+        {
+            if (page == null)
+            {
+                <button class="join-item btn btn-sm btn-disabled">…</button>
+            }
+            else
+            {
+                <button class="join-item btn btn-sm @(page == Model.PageNo ? "btn-active" : "")"
+                        hx-get="@PageUrl(page.Value)"
+                        hx-target="#result-list"
+                        hx-push-url="true">@(page)</button>
+            }
+        }
+
+        <button class="join-item btn btn-sm @(!hasNext ? "btn-disabled" : "")"
+                hx-get="@PageUrl(Model.PageNo + 1)"
+                hx-target="#result-list"
+                hx-push-url="true">»
+        </button>
+    </div>
+    <span class="text-sm text-base-content/60">
+        共 @Model.TotalPages 页
+    </span>
+
+</div>
+
+@functions {
+
+    IEnumerable<int?> GetPageNumbers(int current, int total)
+    {
+        var show = new HashSet<int> { 1, total };
+        for (int i = Math.Max(1, current - 2); i <= Math.Min(total, current + 2); i++)
+        {
+            show.Add(i);
+        }
+
+        int? prev = null;
+        foreach (var p in show.OrderBy(x => x))
+        {
+            if (prev.HasValue && p - prev > 1)
+            {
+                yield return null;
+            }
+
+            yield return p;
+            prev = p;
+        }
+    }
+
+}

@@ -1,0 +1,25 @@
+@implements IDisposable
+@inject GlobalOverlayService OverlayService
+
+<MudOverlay Visible="OverlayService.IsVisible"
+            DarkBackground="OverlayService.DarkBackground"
+            AutoClose="OverlayService.AutoClose"
+            OnClosed="OverlayService.Hide">
+    <div class="d-flex flex-column align-center justify-center">
+        <MudProgressCircular Color="Color.Info" Indeterminate="true" Class="mb-2"/>
+        <MudText Typo="Typo.h6" Color="Color.Info">@OverlayService.OverlayText</MudText>
+    </div>
+</MudOverlay>
+
+@code {
+
+    protected override void OnInitialized()
+        => OverlayService.OnChanged += OnStateChanged;
+
+    private void OnStateChanged()
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+        => OverlayService.OnChanged -= OnStateChanged;
+
+}

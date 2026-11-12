@@ -1,0 +1,128 @@
+@using Alcedo.Frontend.FormulaEngine.BackendInterfaces
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="6" Class="d-flex flex-column" Style="height: 60vh">
+                <div class="d-flex justify-space-between align-center mb-2">
+                    <MudText Typo="Typo.overline">Test Payload (JSON)</MudText>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="FormatJson">
+                        Format JSON
+                    </MudButton>
+                </div>
+                <MudTextField @bind-Value="_payload"
+                              Variant="Variant.Outlined"
+                              Lines="20"
+                              AutoGrow="false"
+                              FullWidth="true"
+                              Class="flex-1"
+                              Style="font-family: monospace; font-size: 12px"
+                              Error="@(_jsonError is not null)"
+                              ErrorText="@_jsonError"/>
+            </MudItem>
+
+            <MudItem xs="6" Class="d-flex flex-column" Style="height: 60vh">
+                <div class="d-flex justify-space-between align-center mb-2">
+                    <MudText Typo="Typo.overline">Output</MudText>
+                </div>
+
+                <MudPaper Outlined="true" Class="flex-1 overflow-auto pa-4" Style="height: 0">
+                    @if (_result is null)
+                    {
+                        <div class="d-flex flex-column align-center justify-center" style="height: 100%; opacity: 0.3">
+                            <MudIcon Icon="@Icons.Material.Outlined.Article" Style="font-size: 3rem"/>
+                            <MudText Typo="Typo.caption" Class="mt-2 font-italic">
+                                No output. Click "Execute Test" to evaluate.
+                            </MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.overline" Color="Color.Primary">@(_result ?? "")</MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_loading">Close</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="ExecuteTest"
+                   Disabled="_loading">
+            @if (_loading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2"/>
+            }
+            Execute Test
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public Guid FormulaId { get; set; }
+    [Inject] public IFormula Client { get; set; } = null!;
+
+    private string _payload = "{\n  \"key\": \"value\"\n}";
+    private string? _jsonError;
+    private string? _result;
+    private string _viewMode = "preview";
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _payload = await RequestService.ExecuteAsync(() => Client.GetTestInputStructure(FormulaId)) ?? "{\n  \"key\": \"value\"\n}";
+    }
+
+    private void FormatJson()
+    {
+        try
+        {
+            var parsed = System.Text.Json.JsonDocument.Parse(_payload);
+            _payload = System.Text.Json.JsonSerializer.Serialize(
+                parsed, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            _jsonError = null;
+        }
+        catch (Exception e)
+        {
+            _jsonError = $"Invalid JSON: {e.Message}";
+        }
+    }
+
+    private async Task ExecuteTest()
+    {
+        try
+        {
+            System.Text.Json.JsonDocument.Parse(_payload);
+            _jsonError = null;
+        }
+        catch (Exception e)
+        {
+            _jsonError = $"Cannot execute: Invalid JSON. {e.Message}";
+            return;
+        }
+
+        _loading = true;
+        _result = await RequestService.ExecuteAsync(() => Client.TestFormula(FormulaId, _payload));
+        _loading = false;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+    
+    public static async Task ShowAsync(
+        IDialogService dialogService,
+        Guid templateId)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(FormulaId)] = templateId
+        };
+        await dialogService.ShowAsync<FormulaTestDialog>(
+            "Test Formula", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true });
+    }
+}

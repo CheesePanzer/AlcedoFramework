@@ -1,0 +1,16 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using Alcedo.Frontend.Blazor
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@inject AlcedoRequestService RequestService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject AutoValidatorService AutoValidator
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]

@@ -1,0 +1,24 @@
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-2">Job: <strong>@JobName</strong></MudText>
+        <MudText Class="mb-4">Trigger: <strong>@TriggerName</strong></MudText>
+        <MudTextField @bind-Value="_cron" Label="Cron Expression"
+                      Variant="Variant.Outlined" Placeholder="0 0/5 * * * ?" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@string.IsNullOrWhiteSpace(_cron)" OnClick="Confirm">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string JobName { get; set; } = "";
+    [Parameter] public string TriggerName { get; set; } = "";
+
+    private string _cron = "";
+
+    private void Cancel() => MudDialog.Cancel();
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(_cron));
+}

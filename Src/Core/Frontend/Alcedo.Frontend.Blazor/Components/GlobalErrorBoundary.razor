@@ -1,0 +1,56 @@
+@inherits Microsoft.AspNetCore.Components.Web.ErrorBoundary
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    <MudOverlay Visible="true" DarkBackground="false" LightBackground="false" Absolute="false"
+                Styles="background-color: var(--mud-palette-background); z-index: 9999;">
+        <MudContainer MaxWidth="MaxWidth.Small" Class="pa-6">
+            <MudPaper Outlined="true" Elevation="4" Class="pa-6 rounded-lg">
+                <MudText Typo="Typo.h5" Color="Color.Primary" Class="font-weight-medium mb-2">
+                    Something went wrong
+                </MudText>
+
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    The application encountered an issue. Please try returning to the home page.
+                    "@CurrentException.Message"
+                </MudText>
+
+                <MudExpansionPanels Elevation="0" Outlined="true" Class="mb-4">
+                    <MudExpansionPanel Text="Diagnostic Information"
+                                       Style="background-color: var(--mud-palette-background-grey);">
+                        <MudTextField Value="@CurrentException.ToString()"
+                                      ReadOnly="true"
+                                      Lines="10"
+                                      Variant="Variant.Outlined"
+                                      Style="font-family: monospace; font-size: 12px;" />
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NavigateToHome">
+                    Refresh
+                </MudButton>
+            </MudPaper>
+        </MudContainer>
+    </MudOverlay>
+}
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+    protected override async Task OnErrorAsync(Exception exception)
+    {
+        Console.WriteLine($"[ErrorBoundary Log] {exception.Message}");
+
+        await Task.CompletedTask;
+    }
+
+    private void NavigateToHome()
+    {
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+}

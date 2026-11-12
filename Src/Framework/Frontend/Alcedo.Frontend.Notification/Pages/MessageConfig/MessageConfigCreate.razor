@@ -1,0 +1,38 @@
+@page "/notification/configs/new"
+@inject IMessageConfig Client
+@inject IMessageType TypeClient
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+
+<MasterDataCreatePage TDto="MessageConfigDto"
+                      TSearch="MessageConfigSearchQuery"
+                      TCreateCommand="MessageConfigCreateCommand"
+                      TUpdateCommand="MessageConfigUpdateCommand"
+                      Client="Client"
+                      Title="New Config"
+                      BackHref="/notification/configs"
+                      AfterCreateHref="/notification/configs/{id}"
+                      Command="_command">
+    <ChildContent>
+        <MudItem xs="12" sm="3">
+            <PickerInput TItem="MessageTypeDto"
+                         TQuery="MessageTypeSearchQuery"
+                         Client="TypeClient"
+                         Label="Message Type"
+                         DisplayTextFunc="@(t => $"[{t.Code}] {t.Name}")"
+                         OnSelected="OnMessageTypeSelected"/>
+        </MudItem>
+    </ChildContent>
+</MasterDataCreatePage>
+
+@code {
+    private MessageConfigCreateCommand _command = new();
+
+    private Task OnMessageTypeSelected(MessageTypeDto? selected)
+    {
+        _command.MessageTypeCode = selected?.Code ?? "";
+        return Task.CompletedTask;
+    }
+
+}

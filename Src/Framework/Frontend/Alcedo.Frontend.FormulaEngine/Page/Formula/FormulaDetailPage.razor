@@ -1,0 +1,364 @@
+@page "/formula-engine/formulas/{id:guid}"
+@using Alcedo.Frontend.FormulaEngine.BackendInterfaces
+@using Alcedo.Frontend.FormulaEngine.Components
+@using MudBlazor
+@inject IFormula FormulaClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+
+    <MudToolBar Dense="true" Class="px-0 mb-6">
+        <MudLink StartIcon="@Icons.Material.Filled.ArrowBack"
+                 Color="Color.Secondary"
+                 Uncontrolled="true"
+                 Href="/formula-engine/formulas"
+                 Class="d-flex align-center">
+            Back
+        </MudLink>
+        <MudText Typo="Typo.h6" Class="ml-4">Formula Detail</MudText>
+        <MudSpacer/>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Color="Color.Primary"
+                   OnClick="RefreshData">
+            Refresh
+        </MudButton>
+    </MudToolBar>
+
+    @if (_dto is null)
+    {
+        <MudAlert Severity="Severity.Info">Loading...</MudAlert>
+    }
+    else
+    {
+        <MudStack Spacing="6">
+            <MudCard Outlined="true">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Input Parameters</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton
+                            StartIcon="@Icons.Material.Filled.Save"
+                            Color="Color.Primary"
+                            Size="Size.Large"
+                            OnClick="@SavaInputAsync">
+                            Save
+                        </MudButton>
+                        <MudIconButton Icon="@(_inputCollapsed ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ExpandLess)"
+                                       Size="Size.Large"
+                                       OnClick="ToggleCollapsed"/>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudCollapse Expanded="_inputCollapsed">
+                    <MudTable Items="_dto.InputParameters" Dense="true" Hover="true" Bordered="true">
+                        <HeaderContent>
+                            <MudTh>Var Name</MudTh>
+                            <MudTh>Description</MudTh>
+                            <MudTh>Type</MudTh>
+                            <MudTh>Valid Condition</MudTh>
+                            <MudTh>Default Value</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.VarName</MudTd>
+                            <MudTd>@context.VarDescription</MudTd>
+                            <MudTd>@context.VarType</MudTd>
+                            <MudTd>
+                                <MudTextField @bind-Value="context.ValidCondition"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              FullWidth="true"/>
+                            </MudTd>
+                            <MudTd>
+                                <MudTextField @bind-Value="context.DefaultValue"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              FullWidth="true"/>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    </MudCollapse>
+                </MudCardContent>
+            </MudCard>
+
+            @* ── Section 2+3: 并排 ── *@
+            <MudGrid Spacing="4">
+
+                @* 左 2/3：Intermediate Expressions *@
+                <MudItem xs="8">
+                    <MudCard Outlined="true" Style="height: 100%">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Intermediate Expressions</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudButton
+                                    StartIcon="@Icons.Material.Filled.Save"
+                                    Color="Color.Primary"
+                                    Size="Size.Large"
+                                    OnClick="@SaveExpressionsAsync">
+                                    Save
+                                </MudButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               OnClick="AddExpression"/>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                @foreach (var (item, index) in _sortedExpressions.Select((x, i) => (x, i)))
+                                {
+                                    <MudCard Outlined="true">
+                                        <MudCardContent Class="py-2">
+                                            <MudGrid AlignItems="AlignItems.Center">
+                                                <MudItem xs="1">
+                                                    <MudStack Spacing="0">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp"
+                                                                       Size="Size.Small"
+                                                                       Disabled="index == 0"
+                                                                       OnClick="() => MoveUp(index)"/>
+                                                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown"
+                                                                       Size="Size.Small"
+                                                                       Disabled="index == _sortedExpressions.Count - 1"
+                                                                       OnClick="() => MoveDown(index)"/>
+                                                    </MudStack>
+                                                </MudItem>
+                                                <MudItem xs="3">
+                                                    <MudTextField @bind-Value="item.VarName"
+                                                                  Label="Var Name*"
+                                                                  Variant="Variant.Outlined"
+                                                                  Margin="Margin.Dense"
+                                                                  FullWidth="true"/>
+                                                </MudItem>
+                                                <MudItem xs="4">
+                                                    <MudTextField @bind-Value="item.Expression"
+                                                                  Label="Expression*"
+                                                                  Variant="Variant.Outlined"
+                                                                  Margin="Margin.Dense"
+                                                                  FullWidth="true"/>
+                                                </MudItem>
+                                                <MudItem xs="3">
+                                                    <MudTextField @bind-Value="item.Note"
+                                                                  Label="Note"
+                                                                  Variant="Variant.Outlined"
+                                                                  Margin="Margin.Dense"
+                                                                  FullWidth="true"/>
+                                                </MudItem>
+                                                <MudItem xs="1">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Color="Color.Error"
+                                                                   Size="Size.Medium"
+                                                                   OnClick="() => RemoveExpression(index)"/>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                
+                <MudItem xs="4">
+                    <MudCard Outlined="true" Style="height: 100%">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Output Parameters</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudButton
+                                    StartIcon="@Icons.Material.Filled.Save"
+                                    Color="Color.Primary"
+                                    Size="Size.Large"
+                                    OnClick="@SaveOutputAsync">
+                                    Save
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled"
+                                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                                           Color="Color.Info"
+                                           OnClick="OpenTestDialog"
+                                           Class="me-2">
+                                    Test
+                                </MudButton>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudTable Items="_dto.OutputParameters" Dense="true" Hover="true" Bordered="true">
+                                <HeaderContent>
+                                    <MudTh>Var Name</MudTh>
+                                    <MudTh>Type</MudTh>
+                                    <MudTh>Expression*</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.VarName</MudTd>
+                                    <MudTd>@context.VarType</MudTd>
+                                    <MudTd>
+                                        <MudTextField @bind-Value="context.Expression"
+                                                      Variant="Variant.Outlined"
+                                                      Margin="Margin.Dense"
+                                                      FullWidth="true"/>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+            </MudGrid>
+
+        </MudStack>
+    }
+
+</MudContainer>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private FormulaDto? _dto;
+
+    private List<FormulaExpressionDto> _sortedExpressions = [];
+    
+    bool _inputCollapsed = true;
+
+    private void ToggleCollapsed() {
+        _inputCollapsed = !_inputCollapsed;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RefreshData();
+            StateHasChanged();
+        }
+    }
+
+    private void MoveUp(int index)
+    {
+        if (index == 0) return;
+        (_sortedExpressions[index], _sortedExpressions[index - 1])
+            = (_sortedExpressions[index - 1], _sortedExpressions[index]);
+        SyncOrder();
+    }
+
+    private void MoveDown(int index)
+    {
+        if (index == _sortedExpressions.Count - 1) return;
+        (_sortedExpressions[index], _sortedExpressions[index + 1])
+            = (_sortedExpressions[index + 1], _sortedExpressions[index]);
+        SyncOrder();
+    }
+
+    private void SyncOrder()
+    {
+        for (var i = 0; i < _sortedExpressions.Count; i++)
+            _sortedExpressions[i] = _sortedExpressions[i] with { Order = i + 1 };
+    }
+
+    private async Task RefreshData()
+    {
+        _dto = await RequestService.ExecuteAsync(() => FormulaClient.GetAsync(Id));
+
+        if (_dto is not null)
+        {
+            _sortedExpressions = _dto.Expressions.OrderBy(e => e.Order).ToList();
+            StateHasChanged();
+        }
+    }
+
+    private void AddExpression()
+    {
+        _sortedExpressions.Add(new FormulaExpressionDto
+        {
+            FormulaId = Id,
+            Order = _sortedExpressions.Count + 1,
+            VarName = string.Empty,
+            Expression = string.Empty,
+            Note = null
+        });
+    }
+
+    private void RemoveExpression(int index)
+    {
+        _sortedExpressions.RemoveAt(index);
+        SyncOrder();
+    }
+
+    private async Task SavaInputAsync()
+    {
+        if (_dto is null)
+        {
+            return;
+        }
+        
+        var command = new FormulaInputUpdateCommand()
+        {
+            FormulaVersion = _dto.Version,
+            
+            Items = _dto.InputParameters.Select(p => new FormulaInputUpdateCommandItem()
+            {
+                InputParamId = p.Id,
+                DefaultValue = p.DefaultValue,
+                ValidCondition =  p.ValidCondition,
+            }).ToList()
+        };
+        
+        await AutoValidator.ValidateAsync(command);
+
+        await RequestService.ExecuteAsync(() => FormulaClient.UpdateInputParams(_dto.Id, command), opt => opt.ExecuteOnSuccess(RefreshData));
+    }
+
+    private async Task SaveExpressionsAsync()
+    {
+        if (_dto is null)
+        {
+            return;
+        }
+
+        var command = new FormulaExpressionUpdateCommand()
+        {
+            FormulaVersion = _dto.Version,
+
+            Items = _sortedExpressions.Select(p => new FormulaExpressionUpdateCommandItem()
+            {
+                Order = p.Order,
+                VarName = p.VarName,
+                Expression = p.Expression,
+                Note = p.Note
+            }).ToList()
+        };
+        
+        await AutoValidator.ValidateAsync(command);
+        
+        await RequestService.ExecuteAsync(() => FormulaClient.UpdateExpressions(_dto.Id, command), opt => opt.ExecuteOnSuccess(RefreshData));
+    }
+
+    private async Task SaveOutputAsync()
+    {
+        if (_dto is null)
+        {
+            return;
+        }
+        
+        var command = new FormulaOutputUpdateCommand()
+        {
+            FormulaVersion = _dto.Version,
+            
+            Items = _dto.OutputParameters.Select(p => new FormulaOutputUpdateCommandItem()
+            {
+                OutputParamId = p.Id,
+                Expression = p.Expression
+            }).ToList()
+        };
+
+        await AutoValidator.ValidateAsync(command);
+
+        await RequestService.ExecuteAsync(() => FormulaClient.UpdateOutputParams(_dto.Id, command), opt => opt.ExecuteOnSuccess(RefreshData));
+    }
+    
+    private async Task OpenTestDialog(MouseEventArgs arg)
+    {
+        await FormulaTestDialog.ShowAsync(DialogService, Id);
+    }
+
+}

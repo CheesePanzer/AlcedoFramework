@@ -1,0 +1,20 @@
+@using System.Net.Mime
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+@if (ActualShow)
+{
+    <div class="alcedo-watermark-overlay">
+        <div class="alcedo-watermark-content">@ActualText</div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+
+    private bool ActualShow => !string.IsNullOrWhiteSpace(AppSettingsText ?? Text);
+    
+    private string? ActualText => AppSettingsText ?? Text;
+
+    private string? AppSettingsText => Configuration["Watermark:Text"];
+}

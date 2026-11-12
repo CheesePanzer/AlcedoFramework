@@ -1,0 +1,131 @@
+@typeparam TItem where TItem : Alcedo.Frontend.Abstraction.Dto.MasterDataDtoBase
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@inject AlcedoRequestService RequestService
+
+@foreach (var action in _actionRegistry)
+{
+    var captured = action;
+    var available = IsActionAvailable(captured);
+    <MudTooltip Text="@(available ? "" : "Not available for current selection")">
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@captured.Icon"
+                   Color="@captured.Color"
+                   Disabled="@(!available)"
+                   OnClick="@(() => ExecuteActionAsync(captured))"
+                   Class="me-2">
+            @captured.Label
+        </MudButton>
+    </MudTooltip>
+}
+
+@code {
+    [Parameter] [EditorRequired] public IMasterDataStateController Client { get; set; } = null!;
+    [Parameter] [EditorRequired] public EventCallback OnDataChanged { get; set; }
+    [Parameter] [EditorRequired] public IReadOnlyCollection<TItem> SelectedItems { get; set; } = Array.Empty<TItem>();
+    [Parameter] public StateFlowBase<MasterDataStateValue, MasterDataStateTransitionTrigger> Flow { get; set; } = new MasterDataDefaultStatusFlow();
+    [Parameter] public StateActionGuardBase<MasterDataStateValue, MasterDataStateAction> Guard { get; set; } = new MasterDataDefaultOperationGuard();
+    [Parameter] public IReadOnlyCollection<ActionMetadata> ExtraActions { get; set; } = Array.Empty<ActionMetadata>();
+
+    public record ActionMetadata(
+        string Label,
+        string Icon,
+        Color Color,
+        Func<IReadOnlyCollection<TItem>, AlcedoRequestService, Task> Execute,
+        MasterDataStateTransitionTrigger? Trigger = null,
+        MasterDataStateAction? Action = null,
+        Func<Task>? AfterExecute = null
+    )
+    {
+        public static ActionMetadata Archive(Func<Guid, CancellationToken, Task> execute)
+        {
+            return new ActionMetadata(
+                Label: "Archive",
+                Icon: Icons.Material.Filled.Archive,
+                Color: Color.Secondary,
+                Action: MasterDataStateActions.Archive,
+                Trigger: MasterDataStateTransitionTriggers.Enable,
+                Execute: (items, rs) => 
+                    rs.ExecuteAsync(
+                        items.Select(item => 
+                            (Func<Task>)(() => execute(item.Id, default))).ToList(),
+                        opt => opt.WithSuccessMsg()
+                            .WithConfirmation($"Archive {items.Count} item(s)?"))
+            );
+        }
+    }
+
+    private List<ActionMetadata> _actionRegistry = [];
+
+    protected override void OnParametersSet()
+    {
+        _actionRegistry =
+        [
+            new(
+                Label: "Enable",
+                Icon: Icons.Material.Filled.PlayArrow,
+                Color: Color.Success,
+                Trigger: MasterDataStateTransitionTriggers.Enable,
+                Execute: (items, rs) => rs.ExecuteAsync(
+                    items.Select(item => (Func<Task>)(() => Client.EnableAsync(item.Id))).ToList(),
+                    opt => opt.WithSuccessMsg())
+            ),
+            new(
+                Label: "Disable",
+                Icon: Icons.Material.Filled.Pause,
+                Color: Color.Warning,
+                Trigger: MasterDataStateTransitionTriggers.Disable,
+                Execute: (items, rs) => rs.ExecuteAsync(
+                    items.Select(item => (Func<Task>)(() => Client.DisableAsync(item.Id))).ToList(),
+                    opt => opt.WithSuccessMsg())
+            ),
+            new(
+                Label: "Delete",
+                Icon: Icons.Material.Filled.Delete,
+                Color: Color.Error,
+                Action: MasterDataStateActions.Delete,
+                Execute: (items, rs) => rs.ExecuteAsync(
+                    items.Select(item => (Func<Task>)(() => Client.DeleteAsync(item.Id))).ToList(),
+                    opt => opt.WithSuccessMsg()
+                        .WithConfirmation($"Delete {items.Count} item(s)?"))
+            )
+        ];
+
+        _actionRegistry.AddRange(ExtraActions);
+    }
+
+    private bool IsActionAvailable(ActionMetadata action)
+    {
+        if (SelectedItems.Count == 0)
+        {
+            return false;
+        }
+
+        if (action.Trigger is not null)
+        {
+            return SelectedItems.All(item => Flow.CheckOperationValidity(item.Status, action.Trigger));
+        }
+
+        if (action.Action is not null)
+        {
+            return SelectedItems.All(item => Guard.IsAllowed(item.Status, action.Action));
+        }
+
+        return true;
+    }
+
+    private async Task ExecuteActionAsync(ActionMetadata action)
+    {
+        await action.Execute(SelectedItems, RequestService);
+
+        if (action.AfterExecute is null)
+        {
+            await OnDataChanged.InvokeAsync();
+        }
+        else
+        {
+            await action.AfterExecute();
+        }
+    }
+
+}

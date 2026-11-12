@@ -1,0 +1,102 @@
+@page "/notification/errors"
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+@inject IMessageError Client
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudText Typo="Typo.h4">Message Errors</MudText>
+        <MudSpacer/>
+        @if (_selectedItems.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Redo"
+                       Color="Color.Warning"
+                       OnClick="@RetryErrorMsg"
+                       Class="ms-2">
+                Retry
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       Color="Color.Error"
+                       OnClick="@DeleteMessage"
+                       Class="ms-2">
+                Delete
+            </MudButton>
+        }
+    </MudToolBar>
+
+    <AutoSearch TQuery="MessageErrorSearchQuery"
+                Query="_searchQuery"
+                SortQuery="_sortQuery"
+                SortFields="SortFields"
+                OnSearch="ExecuteSearch"/>
+
+    @if (_pagedResult is not null)
+    {
+        <AutoTable TItem="MessageErrorDto"
+                   Items="_pagedResult.Items"
+                   Selectable="true"
+                   SelectedItemsChanged="OnSelected"/>
+        <Pagination Query="_paginationQuery"
+                    OnChanged="LoadPagedResult"
+                    TotalItems="_pagedResult.TotalCount"/>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">Table Has No Records</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] [EditorRequired] public string Title { get; set; } = null!;
+    [Parameter] public string? CreateHref { get; set; }
+    [Parameter] public IReadOnlyList<string> SortFields { get; set; } = new MasterDataSortPreset().Build();
+    
+    private MessageErrorSearchQuery _searchQuery = new();
+    private SortQuery _sortQuery = new();
+    private PaginationQuery _paginationQuery = new();
+    private PagedResult<MessageErrorDto>? _pagedResult;
+    private IReadOnlyCollection<MessageErrorDto> _selectedItems = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPagedResult();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExecuteSearch()
+    {
+        _paginationQuery.PageNo = 1;
+        await LoadPagedResult();
+    }
+
+    private async Task LoadPagedResult()
+        => _pagedResult = await RequestService.ExecuteAsync(() => Client.GetListAsync(_searchQuery, _sortQuery, _paginationQuery));
+
+    private void OnSelected(IReadOnlyList<MessageErrorDto> selected)
+        => _selectedItems = selected.ToList();
+
+    private async Task DeleteMessage()
+    {
+        await RequestService.ExecuteAsync(
+            _selectedItems.Select(item => (Func<Task>)(() => Client.DeleteErrorMsg(item.Id))).ToList(), 
+            opt => opt.WithConfirmation($"Do you confirm to delete {_selectedItems.Count} message(s)? Deleted Items can not be recovered").WithSuccessMsg());
+        await ExecuteSearch();
+    }
+    
+    private async Task RetryErrorMsg()
+    {
+        await RequestService.ExecuteAsync(_selectedItems.Select(item => (Func<Task>)(() => Client.RetryErrorMsg(item.Id))).ToList(),  
+            opt => opt.WithConfirmation($"Do you confirm to resend {_selectedItems.Count} message(s)?").WithSuccessMsg());
+        await ExecuteSearch();
+    }
+
+}

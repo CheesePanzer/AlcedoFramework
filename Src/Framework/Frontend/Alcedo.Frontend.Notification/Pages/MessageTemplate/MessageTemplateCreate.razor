@@ -1,0 +1,13 @@
+@page "/notification/templates/new"
+@inject IMessageTemplate Client
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+
+<MasterDataCreatePage TDto="MessageTemplateDto"
+                      TSearch="MessageTemplateSearchQuery"
+                      TCreateCommand="MessageTemplateCreateCommand"
+                      TUpdateCommand="MessageTemplateUpdateCommand"
+                      Client="Client"
+                      Title="New Template"
+                      BackHref="/notification/templates"
+                      AfterCreateHref="/notification/templates/{id}"/>

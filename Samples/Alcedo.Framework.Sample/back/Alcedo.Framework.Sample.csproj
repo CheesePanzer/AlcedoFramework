@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Src\Core\Backend\Alcedo.Core.Host\Alcedo.Core.Host.csproj" />
+      <ProjectReference Include="..\..\..\Src\Core\Backend\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI\Alcedo.Core.Presentation.Mvc.Kit.DaisyUI.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Admin\Alcedo.Framework.Admin.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.FormulaEngine\Alcedo.Framework.FormulaEngine.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Identity.Contracts\Alcedo.Framework.Identity.Contracts.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Identity\Alcedo.Framework.Identity.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Notification.Contracts\Alcedo.Framework.Notification.Contracts\Alcedo.Framework.Notification.Contracts.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Notification\Alcedo.Framework.Notification\Alcedo.Framework.Notification.csproj" />
+      <ProjectReference Include="..\..\..\Src\Framework\Backend\Alcedo.Framework.Shared\Alcedo.Framework.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+</Project>

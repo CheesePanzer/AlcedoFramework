@@ -1,0 +1,104 @@
+@using Alcedo.Frontend.Notification.BackendInterface
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex flex-column" Style="height: 50vh; min-width: 500px;">
+            <div class="d-flex justify-space-between align-center mb-2">
+                <MudText Typo="Typo.overline">Test Payload (JSON)</MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="FetchJsonExample">
+                    Fetch JSON Example
+                </MudButton>
+            </div>
+            <MudTextField @bind-Value="_payload"
+                          Variant="Variant.Outlined"
+                          Lines="15"
+                          AutoGrow="false"
+                          FullWidth="true"
+                          Class="flex-1"
+                          Style="font-family: monospace; font-size: 12px"
+                          Error="@(_jsonError is not null)"
+                          ErrorText="@_jsonError"/>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_loading">Close</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="ExecuteConfigTest"
+                   Disabled="_loading">
+            @if (_loading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2"/>
+            }
+            Execute Test Config
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public Guid ConfigId { get; set; }
+    [Parameter, EditorRequired] public string MsgCode { get; set; }
+    [Inject] public IMessageConfig Client { get; set; } = null!;
+    [Inject] public IMessageType TypeClient { get; set; } = null!;
+
+    private string _payload = "{\n  \"key\": \"value\"\n}";
+    private string? _jsonError;
+    private bool _loading;
+
+    private async Task FetchJsonExample()
+    {
+        var type = await RequestService.ExecuteAsync(() => TypeClient.GetItemByCode(MsgCode));
+        if (type is not null)
+        {
+            _payload = type.JsonExample;
+        }
+        else
+        {
+            _payload = "{\n  \"key\": \"value\"\n}";
+        }
+        
+    }
+
+    private async Task ExecuteConfigTest()
+    {
+        try
+        {
+            System.Text.Json.JsonDocument.Parse(_payload);
+            _jsonError = null;
+        }
+        catch (Exception e)
+        {
+            _jsonError = $"Cannot execute: Invalid JSON. {e.Message}";
+            return;
+        }
+
+        _loading = true;
+        await RequestService.ExecuteAsync(() => Client.TestMessageConfigAsync(ConfigId, _payload),opt => opt
+            .WithConfirmation("This action will send a empty message to you, need your confirmation")
+            .WithSuccessMsg());
+        _loading = false;
+        
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+    
+    public static async Task ShowAsync(
+        IDialogService dialogService,
+        Guid configId,
+        string msgCode)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(ConfigId)] = configId,
+            [nameof(MsgCode)] = msgCode
+        };
+        await dialogService.ShowAsync<MessageConfigTestDialog>(
+            "Test Message Config", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+}

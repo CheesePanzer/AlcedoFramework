@@ -1,0 +1,24 @@
+@typeparam TDto where TDto : Alcedo.Frontend.Abstraction.Dto.MasterDataDtoBase
+@using Alcedo.Frontend.Blazor.Components.Auto
+
+<MudCard Outlined="true">
+    <MudCardContent>
+        <MudGrid>
+            @if (Dto is null)
+            {
+                <MudAlert Severity="Severity.Info">Failed to Fetch Data</MudAlert>
+            }
+            else
+            {
+                <AutoForm Model="Dto" DefaultColumns="@Columns" IsReadOnly="true"/>
+                @ChildContent?.Invoke(Dto)
+            }
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public TDto? Dto { get; set; }
+    [Parameter] public int Columns { get; set; } = 3;
+    [Parameter] public RenderFragment<TDto>? ChildContent { get; set; }
+}

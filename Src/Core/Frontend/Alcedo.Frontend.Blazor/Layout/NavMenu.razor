@@ -1,0 +1,11 @@
+﻿@inject NavRegistry NavRegistry
+@inject AlcedoFrontendBlazorOptions Options
+
+<MudNavMenu>
+    <MudText Typo="Typo.h6" Class="px-4">@Options.AppDisplayName</MudText>
+    <MudDivider Class="my-2"/>
+    @foreach (var item in NavRegistry.Items)
+    {
+        <NavItemRenderer Item="@item"/>
+    }
+</MudNavMenu>

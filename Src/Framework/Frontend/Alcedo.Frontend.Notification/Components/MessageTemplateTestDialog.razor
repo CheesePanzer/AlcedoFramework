@@ -1,0 +1,145 @@
+@using Alcedo.Frontend.Notification.BackendInterface
+@inject AlcedoRequestService RequestService
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="6" Class="d-flex flex-column" Style="height: 60vh">
+                <div class="d-flex justify-space-between align-center mb-2">
+                    <MudText Typo="Typo.overline">Test Payload (JSON)</MudText>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="FormatJson">
+                        Format JSON
+                    </MudButton>
+                </div>
+                <MudTextField @bind-Value="_payload"
+                              Variant="Variant.Outlined"
+                              Lines="20"
+                              AutoGrow="false"
+                              FullWidth="true"
+                              Class="flex-1"
+                              Style="font-family: monospace; font-size: 12px"
+                              Error="@(_jsonError is not null)"
+                              ErrorText="@_jsonError"/>
+            </MudItem>
+
+            <MudItem xs="6" Class="d-flex flex-column" Style="height: 60vh">
+                <div class="d-flex justify-space-between align-center mb-2">
+                    <MudText Typo="Typo.overline">Rendered Output</MudText>
+                    @if (_result is not null)
+                    {
+                        <MudToggleGroup T="string" @bind-Value="_viewMode" Size="Size.Small" Color="Color.Primary">
+                            <MudToggleItem Value="@("preview")">Preview</MudToggleItem>
+                            <MudToggleItem Value="@("raw")">Raw</MudToggleItem>
+                        </MudToggleGroup>
+                    }
+                </div>
+
+                <MudPaper Outlined="true" Class="flex-1 overflow-auto pa-4" Style="height: 0">
+                    @if (_result is null)
+                    {
+                        <div class="d-flex flex-column align-center justify-center" style="height: 100%; opacity: 0.3">
+                            <MudIcon Icon="@Icons.Material.Outlined.Article" Style="font-size: 3rem"/>
+                            <MudText Typo="Typo.caption" Class="mt-2 font-italic">
+                                No output. Click "Execute Test" to evaluate.
+                            </MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.overline" Color="Color.Primary">Title</MudText>
+                        <MudText Typo="Typo.subtitle1" Class="mb-4 pb-2" Style="border-bottom: 1px solid var(--mud-palette-divider)">
+                            @(string.IsNullOrEmpty(_result.Title) ? "—" : _result.Title)
+                        </MudText>
+
+                        <MudText Typo="Typo.overline" Color="Color.Primary">Body</MudText>
+                        @if (_viewMode == "preview")
+                        {
+                            <div class="mt-1">
+                                @((MarkupString)(_result.Body ?? ""))
+                            </div>
+                        }
+                        else
+                        {
+                            <pre style="font-size: 12px; white-space: pre-wrap; word-break: break-all">@_result.Body</pre>
+                        }
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_loading">Close</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="ExecuteTest"
+                   Disabled="_loading">
+            @if (_loading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2"/>
+            }
+            Execute Test
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public Guid TemplateId { get; set; }
+    [Inject] public IMessageTemplate Client { get; set; } = null!;
+
+    private string _payload = "{\n  \"key\": \"value\"\n}";
+    private string? _jsonError;
+    private MessageTemplateTestRenderResult? _result;
+    private string _viewMode = "preview";
+    private bool _loading;
+
+    private void FormatJson()
+    {
+        try
+        {
+            var parsed = System.Text.Json.JsonDocument.Parse(_payload);
+            _payload = System.Text.Json.JsonSerializer.Serialize(
+                parsed, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            _jsonError = null;
+        }
+        catch (Exception e)
+        {
+            _jsonError = $"Invalid JSON: {e.Message}";
+        }
+    }
+
+    private async Task ExecuteTest()
+    {
+        try
+        {
+            System.Text.Json.JsonDocument.Parse(_payload);
+            _jsonError = null;
+        }
+        catch (Exception e)
+        {
+            _jsonError = $"Cannot execute: Invalid JSON. {e.Message}";
+            return;
+        }
+
+        _loading = true;
+        _result = await RequestService.ExecuteAsync(() => Client.TestRenderAsync(TemplateId, _payload));
+        _loading = false;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+    
+    public static async Task ShowAsync(
+        IDialogService dialogService,
+        Guid templateId)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(TemplateId)] = templateId
+        };
+        await dialogService.ShowAsync<MessageTemplateTestDialog>(
+            "Test Template", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true });
+    }
+}

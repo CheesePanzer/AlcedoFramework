@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject ThemeStateProvider ThemeState
+
+<MudThemeProvider IsDarkMode="@_isDarkMode" Theme="@ActualTheme" />
+<GlobalOverlay />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<AlcedoWatermark Text="@WatermarkText"/>
+
+@ChildContent
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public MudTheme? Theme { get; set; }
+    [Parameter] public string? WatermarkText { get; set; }
+
+    private MudTheme ActualTheme {
+        get => Theme ?? field;
+    } = new();
+
+    private bool _isDarkMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDarkMode = await ThemeState.IsDarkMode();
+        ThemeState.OnThemeChanged += OnThemeStateChangedAsync;
+    }
+
+    private async Task OnThemeStateChangedAsync()
+    {
+        _isDarkMode = await ThemeState.IsDarkMode();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeState.OnThemeChanged -= OnThemeStateChangedAsync;
+    }
+}

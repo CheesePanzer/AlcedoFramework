@@ -1,0 +1,392 @@
+@typeparam TQuery
+@using System.Linq.Expressions
+@using System.Reflection
+@using Alcedo.Frontend.Abstraction.Attributes
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.StateMachine
+
+<MudExpansionPanels MultiExpansion="true" Class="mb-4">
+    <MudExpansionPanel Text="Search Filters" IsExpanded="_isExpanded" IsExpandedChanged="OnExpandedChanged">
+        <TitleContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.FilterList"/>
+                <MudText Typo="Typo.subtitle1"><strong>Search Filters</strong></MudText>
+            </MudStack>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid Class="mt-2">
+                @foreach (var prop in GetQueryProperties())
+                {
+                    <MudItem xs="12" sm="6" md="3">
+                        @RenderSearchField(prop)
+                    </MudItem>
+                }
+
+                @if (SortFields is not null && SortFields.Count > 0)
+                {
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudSelect T="string"
+                                   Label="Sort By"
+                                   Variant="Variant.Outlined"
+                                   Value="_sortField"
+                                   ValueChanged="OnSortFieldChanged"
+                                   Clearable="true">
+                            @foreach (var field in SortFields)
+                            {
+                                <MudSelectItem Value="@field">@field</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    @if (!string.IsNullOrEmpty(_sortField))
+                    {
+                        <MudItem xs="12" sm="6" md="3">
+                            <MudSelect T="bool"
+                                       Label="Sort Direction"
+                                       Variant="Variant.Outlined"
+                                       @bind-Value="_sortDescending">
+                                <MudSelectItem Value="false">Ascending</MudSelectItem>
+                                <MudSelectItem Value="true">Descending</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    }
+                }
+            </MudGrid>
+
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4" Spacing="2">
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           OnClick="Reset">
+                    Reset
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@(IsAllNull ? Icons.Material.Filled.Refresh : Icons.Material.Filled.Search)"
+                           OnClick="Search">
+                    @(IsAllNull ? "Refresh" : "Search")
+                </MudButton>
+            </MudStack>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    [Parameter] public required TQuery Query { get; set; }
+    [Parameter] public IReadOnlyList<string>? SortFields { get; set; }
+    [Parameter] public EventCallback<TQuery> OnSearch { get; set; }
+    [Parameter] public required SortQuery SortQuery { get; set; }
+
+    private string? _sortField;
+    private bool _sortDescending;
+    private bool _isExpanded = true;
+
+    protected override void OnParametersSet()
+    {
+        if (SortQuery.HasSort)
+        {
+            var primarySort = SortQuery.Fields![0];
+            _sortField = primarySort.Field;
+            _sortDescending = primarySort.Descending;
+        }
+        else
+        {
+            _sortField = null;
+            _sortDescending = false;
+        }
+    }
+
+    private void OnExpandedChanged(bool expanded)
+    {
+        _isExpanded = expanded;
+    }
+
+    private void OnSortFieldChanged(string? value)
+    {
+        _sortField = value;
+        if (string.IsNullOrEmpty(value))
+        {
+            _sortDescending = false;
+        }
+    }
+
+    private bool IsAllNull =>
+        string.IsNullOrEmpty(_sortField) &&
+        SortQuery?.HasSort != true &&
+        GetQueryProperties().All(p => p.GetValue(Query) is null);
+
+    private IEnumerable<PropertyInfo> GetQueryProperties() =>
+        AutoComponentOrderedProperties.Get(typeof(TQuery))
+            .Where(p => p.CanWrite
+                        && p.GetCustomAttribute<AutoFormIgnoreRenderAttribute>() is null
+                        && p.PropertyType != typeof(bool)
+                        && (!IsCollectionType(p.PropertyType) || IsValueAtomCollection(p.PropertyType)));
+
+    private RenderFragment RenderSearchField(PropertyInfo prop) => builder =>
+    {
+        var label = prop.GetCustomAttribute<AutoRenderLabelAttribute>()?.Label ?? prop.Name;
+        var value = prop.GetValue(Query);
+        var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+        if (type == typeof(DateTime) || type == typeof(DateTimeOffset))
+        {
+            builder.OpenComponent<MudDatePicker>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", Variant.Outlined);
+            builder.AddAttribute(3, "Clearable", true);
+            builder.AddAttribute(4, "Date", value is DateTimeOffset dto ? dto.LocalDateTime
+                : value is DateTime dt ? dt : (DateTime?)null);
+            builder.AddAttribute(5, "DateChanged", EventCallback.Factory.Create<DateTime?>(this, v =>
+            {
+                if (type == typeof(DateTimeOffset) || type == typeof(DateTimeOffset?))
+                {
+                    SetQueryValue(prop, v.HasValue
+                        ? new DateTimeOffset(v.Value, TimeZoneInfo.Local.GetUtcOffset(v.Value))
+                        : null);
+                }
+                else
+                {
+                    SetQueryValue(prop, v);
+                }
+            }));
+            builder.CloseComponent();
+        }
+        else if (IsValueAtomCollection(prop.PropertyType))
+{
+    var elementType = prop.PropertyType.GetGenericArguments()[0];
+    var optionsAttr = prop.GetCustomAttribute<AutoComponentValueAtomOptionsAttribute>();
+    var options = optionsAttr is not null
+        ? optionsAttr.OptionsType
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(f => typeof(ValueAtom).IsAssignableFrom(f.FieldType))
+            .Select(f => f.GetValue(null) as ValueAtom)
+            .Where(v => v is not null)
+            .ToList()
+        : new List<ValueAtom?>();
+
+    var currentValue = (prop.GetValue(Query) as System.Collections.IEnumerable)?
+        .Cast<ValueAtom>().ToList() ?? new List<ValueAtom>();
+
+    builder.OpenComponent<MudSelect<ValueAtom>>(0);
+    builder.AddAttribute(1, "Label", label);
+    builder.AddAttribute(2, "Variant", Variant.Outlined);
+    builder.AddAttribute(3, "MultiSelection", true);
+    builder.AddAttribute(4, "SelectedValues", (IReadOnlyCollection<ValueAtom>)currentValue);
+    builder.AddAttribute(5, "SelectedValuesChanged", EventCallback.Factory.Create<IReadOnlyCollection<ValueAtom>>(this,
+        selected =>
+        {
+            // 转回具体类型的List
+            var castMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast))!
+                .MakeGenericMethod(elementType);
+            var toListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList))!
+                .MakeGenericMethod(elementType);
+            var typedList = toListMethod.Invoke(null, [castMethod.Invoke(null, [selected])]);
+            SetQueryValue(prop, typedList);
+        }));
+    builder.AddAttribute(6, "ToStringFunc", (Func<ValueAtom?, string?>)(v => v?.Value ?? ""));
+    builder.AddAttribute(7, "ChildContent", (RenderFragment)(childBuilder =>
+    {
+        var seq = 0;
+        foreach (var option in options)
+        {
+            var captured = option;
+            childBuilder.OpenComponent<MudSelectItem<ValueAtom>>(seq++);
+            childBuilder.AddAttribute(seq++, "Value", captured);
+            childBuilder.AddContent(seq++, captured!.Value);
+            childBuilder.CloseComponent();
+        }
+    }));
+    builder.CloseComponent();
+}
+        else if (typeof(ValueAtom).IsAssignableFrom(type))
+        {
+            var optionsAttr = prop.GetCustomAttribute<AutoComponentValueAtomOptionsAttribute>();
+            var options = optionsAttr is not null
+                ? optionsAttr.OptionsType
+                    .GetFields(BindingFlags.Public | BindingFlags.Static)
+                    .Where(f => typeof(ValueAtom).IsAssignableFrom(f.FieldType))
+                    .Select(f => f.GetValue(null) as ValueAtom)
+                    .Where(v => v is not null)
+                    .ToList()
+                : new List<ValueAtom?>();
+
+            builder.OpenComponent<MudSelect<ValueAtom>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", Variant.Outlined);
+            builder.AddAttribute(3, "Value", value as ValueAtom);
+            builder.AddAttribute(4, "Clearable", true);
+            builder.AddAttribute(5, "ValueChanged", EventCallback.Factory.Create<ValueAtom>(this,
+                v => SetQueryValue(prop, v)));
+            builder.AddAttribute(6, "ToStringFunc", (Func<ValueAtom?, string?>)(v => v?.Value ?? ""));
+            builder.AddAttribute(7, "ChildContent", (RenderFragment)(childBuilder =>
+            {
+                var seq = 0;
+                foreach (var option in options)
+                {
+                    var captured = option;
+                    childBuilder.OpenComponent<MudSelectItem<ValueAtom>>(seq++);
+                    childBuilder.AddAttribute(seq++, "Value", captured);
+                    childBuilder.AddContent(seq++, captured!.Value);
+                    childBuilder.CloseComponent();
+                }
+            }));
+            builder.CloseComponent();
+        }
+        else if (type.IsEnum)
+        {
+            var nullableEnumType = typeof(Nullable<>).MakeGenericType(type);
+            var callback = CreateEnumValueChangedCallback(prop, nullableEnumType);
+
+            builder.OpenComponent(0, typeof(MudSelect<>).MakeGenericType(nullableEnumType));
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", Variant.Outlined);
+            builder.AddAttribute(3, "Value", value);
+            builder.AddAttribute(4, "Clearable", true);
+            builder.AddAttribute(5, "ValueChanged", callback);
+            builder.AddAttribute(6, "ChildContent", (RenderFragment)(childBuilder =>
+            {
+                var seq = 0;
+                foreach (var enumValue in Enum.GetValues(type))
+                {
+                    var itemType = typeof(MudSelectItem<>).MakeGenericType(nullableEnumType);
+                    childBuilder.OpenComponent(seq++, itemType);
+                    childBuilder.AddAttribute(seq++, "Value", enumValue);
+                    childBuilder.AddContent(seq++, enumValue.ToString());
+                    childBuilder.CloseComponent();
+                }
+            }));
+            builder.CloseComponent();
+        }
+        else if (type == typeof(bool))
+        {
+            builder.OpenComponent<MudSelect<bool?>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", Variant.Outlined);
+            builder.AddAttribute(3, "Value", value as bool?);
+            builder.AddAttribute(4, "Clearable", true);
+            builder.AddAttribute(5, "ValueChanged", EventCallback.Factory.Create<bool?>(this,
+                v => SetQueryValue(prop, v)));
+            builder.AddAttribute(6, "ChildContent", (RenderFragment)(b =>
+            {
+                b.OpenComponent<MudSelectItem<bool?>>(0);
+                b.AddAttribute(1, "Value", (bool?)true);
+                b.AddContent(2, "Yes");
+                b.CloseComponent();
+                b.OpenComponent<MudSelectItem<bool?>>(3);
+                b.AddAttribute(4, "Value", (bool?)false);
+                b.AddContent(5, "No");
+                b.CloseComponent();
+            }));
+            builder.CloseComponent();
+        }
+        else
+        {
+            builder.OpenComponent<MudTextField<string>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", Variant.Outlined);
+            builder.AddAttribute(3, "Value", value?.ToString() ?? "");
+            builder.AddAttribute(4, "Clearable", true);
+            builder.AddAttribute(5, "ValueChanged", EventCallback.Factory.Create<string>(this,
+                v => SetQueryValue(prop, string.IsNullOrEmpty(v) ? null : v)));
+            builder.CloseComponent();
+        }
+    };
+
+    private object CreateEnumValueChangedCallback(PropertyInfo prop, Type enumOrNullableType)
+    {
+        Action<object?> setter = v => SetQueryValue(prop, v);
+
+        var actionType = typeof(Action<>).MakeGenericType(enumOrNullableType);
+
+        var param = Expression.Parameter(enumOrNullableType, "v");
+        var body = Expression.Invoke(
+            Expression.Constant(setter),
+            Expression.Convert(param, typeof(object)));
+        var typedAction = Expression.Lambda(actionType, body, param).Compile();
+
+        var createMethod = typeof(EventCallbackFactory)
+            .GetMethods()
+            .First(m =>
+                m.Name == "Create" &&
+                m.IsGenericMethod &&
+                m.GetParameters() is { Length: 2 } ps &&
+                ps[1].ParameterType.IsGenericType &&
+                ps[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
+            .MakeGenericMethod(enumOrNullableType);
+
+        return createMethod.Invoke(EventCallback.Factory, [this, typedAction])!;
+    }
+
+    private void SetQueryValue(PropertyInfo prop, object? value)
+    {
+        var backingField = typeof(TQuery)
+            .GetField($"<{prop.Name}>k__BackingField",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+        if (backingField is not null)
+        {
+            backingField.SetValue(Query, value);
+        }
+        else
+        {
+            prop.SetValue(Query, value);
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// 核心修改：原地改写 Fields 属性，不重写 SortQuery 引用
+    /// </summary>
+    private async Task Search()
+    {
+        if (string.IsNullOrEmpty(_sortField))
+        {
+            SortQuery.Fields = null; // 原地置空集合，清空排序
+        }
+        else
+        {
+            SortQuery.Fields = new List<SortField>
+            {
+                new() { Field = _sortField, Descending = _sortDescending }
+            };
+        }
+
+        await OnSearch.InvokeAsync(Query);
+    }
+
+    private async Task Reset()
+    {
+        foreach (var prop in GetQueryProperties())
+            SetQueryValue(prop, null);
+
+        _sortField = null;
+        _sortDescending = false;
+
+        SortQuery.Fields = null; // 原地置空集合
+
+        await OnSearch.InvokeAsync(Query);
+    }
+
+    private EventCallback CreateEnumCallback(PropertyInfo prop, Type enumType)
+    {
+        var factoryType = EventCallback.Factory.GetType();
+        var method = factoryType
+            .GetMethods()
+            .First(m => m.Name == "Create" && m.IsGenericMethod)
+            .MakeGenericMethod(enumType);
+
+        Action<object?> action = v => SetQueryValue(prop, v);
+        return (EventCallback)method.Invoke(EventCallback.Factory, [this, action])!;
+    }
+
+    private static bool IsCollectionType(Type type) =>
+        type != typeof(string)
+        && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+    
+    private static bool IsValueAtomCollection(Type type) =>
+        type != typeof(string)
+        && type.IsGenericType
+        && typeof(System.Collections.IEnumerable).IsAssignableFrom(type)
+        && typeof(ValueAtom).IsAssignableFrom(type.GetGenericArguments()[0]);
+
+}

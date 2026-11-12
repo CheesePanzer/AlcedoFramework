@@ -1,0 +1,84 @@
+@page "/identity/roles/{id:guid}"
+@inherits MasterDataDetailPageBase<RoleDto, RoleSearchQuery, RoleCreateCommand, RoleUpdateCommand>
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Identity.Clients.Perm
+@using Alcedo.Frontend.Identity.Clients.Role
+@inject IRoleClient RoleClient
+@inject IPermClient PermClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MasterDataDetailPageToolBar TDto="RoleDto"
+                                 Dto="Dto"
+                                 Title="Role Detail"
+                                 BackHref="/identity/roles"
+                                 StateController="Client"
+                                 LogController="Client"
+                                 OnRefresh="RefreshData"
+                                 OnEdit="OpenEdit"/>
+
+    <MasterDataDetailPageFormCard TDto="RoleDto"
+                                  Dto="Dto"/>
+    @if (Dto is not null && Dto.Status != MasterDataStates.Draft)
+    {
+        <SubEntityBatchTable TItem="PermDto"
+                             Title="Role Has Permissions:"
+                             OnAssignClicked="BatchAssignPerms"
+                             OnBatchDelete="BatchDeletePerms" 
+                             FetchPagedAsync="q => RoleClient.GetPermsByRoleIdAsync(Id, q)" 
+                             @ref="_permTable"/>
+    }
+    
+</MudContainer>
+
+
+
+@code {
+    protected override IMasterDataController<RoleDto, RoleSearchQuery, RoleCreateCommand, RoleUpdateCommand> Client => RoleClient;
+    
+    private SubEntityBatchTable<PermDto>? _permTable;
+    
+    protected override async Task RefreshData()
+    {
+        await base.RefreshData();
+        await RefreshPermsTableOnly();
+    }
+    
+    private async Task BatchDeletePerms(IReadOnlyList<PermDto> selected)
+    {
+        if (selected.Count == 0)
+        {
+            return;
+        }
+
+        await RequestService.ExecuteAsync(
+            () => RoleClient.DeletePermsAsync(Id, selected.Select(r => r.EndpointKey).ToList()), opt => opt.WithConfirmation().WithSuccessMsg("Perms Deleted"));
+        await RefreshPermsTableOnly();
+    }
+
+    private async Task RefreshPermsTableOnly()
+    {
+        if (_permTable is not null)
+        {
+            await _permTable.RefreshAsync();
+        }
+    }
+
+    private async Task BatchAssignPerms()
+    {
+        var selected = await AutoPicker<PermDto, PermSearchQuery>.ShowAsync(
+            DialogService, PermClient, "Select Perms");
+        
+        if (selected is not null)
+        {
+            await RequestService.ExecuteAsync(
+                () => RoleClient.AssignPermsAsync(Id, selected.Select(r => r.EndpointKey).ToList()),
+                opt => opt.WithSuccessMsg("Perms Assigned"));
+            await RefreshPermsTableOnly();
+        }
+    }
+
+}

@@ -1,0 +1,39 @@
+<svg viewBox="230 165 200 80"
+     xmlns="http://www.w3.org/2000/svg"
+     width="@Width"
+     height="@Height"
+     @attributes="UserAttributes">
+    <ellipse cx="340" cy="210" rx="52" ry="32" fill="#5eead4"/>
+    <ellipse cx="345" cy="213" rx="44" ry="25" fill="#2dd4bf"/>
+    <path d="M302 203 Q320 190 360 195 Q380 198 388 207 Q370 203 340 205 Q315 207 302 203Z" fill="#99f6e4"/>
+    <circle cx="315" cy="208" r="2.5" fill="white" opacity="0.5"/>
+    <circle cx="328" cy="203" r="2" fill="white" opacity="0.4"/>
+    <circle cx="342" cy="201" r="2.5" fill="white" opacity="0.5"/>
+    <circle cx="356" cy="204" r="2" fill="white" opacity="0.4"/>
+    <circle cx="368" cy="209" r="2" fill="white" opacity="0.4"/>
+    <ellipse cx="335" cy="221" rx="28" ry="18" fill="white" opacity="0.9"/>
+    <ellipse cx="333" cy="225" rx="20" ry="12" fill="white"/>
+    <ellipse cx="315" cy="193" rx="30" ry="26" fill="#5eead4"/>
+    <ellipse cx="312" cy="183" rx="26" ry="16" fill="#2dd4bf"/>
+    <path d="M288 187 Q302 173 330 177 Q336 179 336 183 Q320 179 302 183 Q292 187 288 187Z" fill="#99f6e4"/>
+    <ellipse cx="298" cy="197" rx="12" ry="9" fill="white" opacity="0.9"/>
+    <ellipse cx="297" cy="198" rx="9" ry="7" fill="white"/>
+    <circle cx="305" cy="189" r="7" fill="#1c1917"/>
+    <circle cx="305" cy="189" r="5" fill="#292524"/>
+    <circle cx="303" cy="187" r="1.8" fill="white"/>
+    <path d="M288 195 L236 201 L288 203Z" fill="#1c1917"/>
+    <path d="M288 195 L236 201 L260 196Z" fill="#44403c"/>
+    <path d="M288 195 L288 203 L292 199Z" fill="white" opacity="0.8"/>
+    <path d="M388 213 Q408 217 415 225 Q405 221 388 219Z" fill="#2dd4bf"/>
+    <path d="M388 215 Q412 223 418 233 Q406 227 388 222Z" fill="#5eead4"/>
+    <path d="M388 218 Q410 229 414 240 Q403 233 388 225Z" fill="#2dd4bf"/>
+</svg>
+
+@code {
+    [Parameter] public string Width { get; set; } = "32";
+    [Parameter] public string Height { get; set; } = "32";
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? UserAttributes { get; set; }
+
+}

@@ -1,0 +1,138 @@
+@typeparam TItem where TItem : class, new()
+@using System.Reflection
+@using Alcedo.Frontend.Blazor.Components.Auto
+@inject IDialogService DialogService
+
+<MudStack Row="false" Spacing="2">
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1">
+        @if (_selected.Count > 0)
+        {
+            <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                       Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       OnClick="HandleDelete">
+                Deleted (@_selected.Count)
+            </MudButton>
+        }
+        <MudButton StartIcon="@Icons.Material.Filled.Add"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   OnClick="HandleAdd">
+            Add New Line
+        </MudButton>
+    </MudStack>
+
+    <AutoTable TItem="TItem"
+               Items="Items"
+               Selectable="true"
+               SelectOnRowClick="false"
+               SelectedItemsChanged="OnSelectionChanged"
+               OnRowClick="HandleRowClick"/>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public required List<TItem> Items { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowCommitted { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowAdded { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnRowDeleted { get; set; }
+    [Parameter] public string DialogTitle { get; set; } = "Edit";
+    [Parameter] public RenderFragment<TItem>? FormChildContent { get; set; }
+
+    private List<TItem> _selected = [];
+
+    private void OnSelectionChanged(IReadOnlyList<TItem> selected) =>
+        _selected = selected.ToList();
+
+    private async Task HandleDelete()
+    {
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            "Delete",
+            $"Confirm Delete {_selected.Count} Records?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (confirm is not true)
+        {
+            return;
+        }
+
+        foreach (var item in _selected)
+        {
+            Items.Remove(item);
+        }
+
+        await OnRowDeleted.InvokeAsync(_selected);
+        _selected = [];
+    }
+
+    private async Task HandleRowClick(TItem item)
+    {
+        var copy = ShallowCopy(item);
+
+        var parameters = new DialogParameters<AutoFormDialog<TItem>>
+        {
+            { x => x.Model, copy },
+            { x => x.ChildContent, FormChildContent?.Invoke(copy) }  // 传 copy 进去
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<AutoFormDialog<TItem>>(DialogTitle, parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            CopyBack(copy, item);
+            await OnRowCommitted.InvokeAsync(item);
+        }
+    }
+
+    private async Task HandleAdd()
+    {
+        var newItem = new TItem();
+
+        var parameters = new DialogParameters<AutoFormDialog<TItem>>
+        {
+            { x => x.Model, newItem },
+            { x => x.ChildContent, FormChildContent?.Invoke(newItem) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<AutoFormDialog<TItem>>(DialogTitle, parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            Items.Add(newItem);
+            await OnRowAdded.InvokeAsync(newItem);
+        }
+    }
+
+    private static TItem ShallowCopy(TItem source)
+    {
+        var method = typeof(object).GetMethod("MemberwiseClone", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        return (TItem)method.Invoke(source, null)!;
+    }
+
+    private static void CopyBack(TItem source, TItem target)
+    {
+        foreach (var prop in typeof(TItem).GetProperties().Where(p => p.CanWrite))
+        {
+            prop.SetValue(target, prop.GetValue(source));
+        }
+    }
+
+}

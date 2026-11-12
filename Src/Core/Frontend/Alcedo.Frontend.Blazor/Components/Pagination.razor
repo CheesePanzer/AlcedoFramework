@@ -1,0 +1,139 @@
+@using Alcedo.Frontend.Abstraction.SearchQuery
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-2">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+        <MudText Typo="Typo.caption">Rows per page</MudText>
+        <MudSelect T="int"
+                   Value="Query.PageSize"
+                   ValueChanged="OnSizeChanged"
+                   Variant="Variant.Text"
+                   Dense="true"
+                   Style="width:80px;">
+            @foreach (var size in _pageSizes)
+            {
+                <MudSelectItem Value="@size">@size</MudSelectItem>
+            }
+        </MudSelect>
+        <MudText Typo="Typo.caption">
+            Total: @TotalItems
+        </MudText>
+    </MudStack>
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+        <MudIconButton Icon="@Icons.Material.Filled.FirstPage"
+                       Size="Size.Small"
+                       Disabled="@(Query.PageNo <= 1)"
+                       OnClick="@(() => OnPageChanged(1))"/>
+
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       Size="Size.Small"
+                       Disabled="@(Query.PageNo <= 1)"
+                       OnClick="@(() => OnPageChanged(Query.PageNo - 1))"/>
+
+        @foreach (var pageIndex in GetPageNumbers())
+        {
+            @if (pageIndex == -1)
+            {
+                <MudText Typo="Typo.body2" Class="px-1">...</MudText>
+            }
+            else
+            {
+                <MudButton Variant="@(pageIndex == Query.PageNo ? Variant.Filled : Variant.Text)"
+                           Color="@(pageIndex == Query.PageNo ? Color.Primary : Color.Default)"
+                           Size="Size.Small"
+                           OnClick="@(() => OnPageChanged(pageIndex))">
+                    @pageIndex
+                </MudButton>
+            }
+        }
+
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       Size="Size.Small"
+                       Disabled="@(Query.PageNo >= TotalPages)"
+                       OnClick="@(() => OnPageChanged(Query.PageNo + 1))"/>
+
+        <MudIconButton Icon="@Icons.Material.Filled.LastPage"
+                       Size="Size.Small"
+                       Disabled="@(Query.PageNo >= TotalPages)"
+                       OnClick="@(() => OnPageChanged(TotalPages))"/>
+
+        <MudText Typo="Typo.caption" Class="ml-2">
+            @Query.PageNo / @TotalPages
+        </MudText>
+    </MudStack>
+
+</MudStack>
+
+@code {
+    [Parameter] public required PaginationQuery Query { get; set; }
+    [Parameter] public int TotalItems { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly int[] _pageSizes = [10, 20, 50, 100, 500];
+
+    private int TotalPages => Query.PageSize > 0
+        ? (int)Math.Ceiling((double)TotalItems / Query.PageSize)
+        : 0;
+
+    private IEnumerable<int> GetPageNumbers()
+    {
+        if (TotalPages <= 9)
+        {
+            return Enumerable.Range(1, TotalPages);
+        }
+
+        var pages = new List<int>();
+        var window = 2;
+
+        pages.Add(1);
+
+        var leftBound = Query.PageNo - window;
+        var rightBound = Query.PageNo + window;
+
+        if (leftBound > 2)
+        {
+            pages.Add(-1);
+        }
+        else
+        {
+            leftBound = 2;
+        }
+
+        for (var i = leftBound; i <= Math.Min(rightBound, TotalPages - 1); i++)
+            pages.Add(i);
+
+        if (rightBound < TotalPages - 1)
+        {
+            pages.Add(-1);
+        }
+
+        pages.Add(TotalPages);
+
+        return pages;
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        if (Query.PageNo == page)
+        {
+            return;
+        }
+
+        Query.PageNo = page; // 原地修改
+        await OnChanged.InvokeAsync(); // 触发父组件重新查询后端
+    }
+
+    private async Task OnSizeChanged(int size)
+    {
+        if (Query.PageSize == size)
+        {
+            return;
+        }
+
+        Query.PageSize = size; // 原地修改行数
+        Query.PageNo = 1; // 切换行数时强制重置回第一页
+        await OnChanged.InvokeAsync(); // 触发父组件重新查询后端
+    }
+
+}

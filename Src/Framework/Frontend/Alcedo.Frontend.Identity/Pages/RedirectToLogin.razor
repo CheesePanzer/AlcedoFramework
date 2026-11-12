@@ -1,0 +1,42 @@
+@page "/redirect-to-login"
+@using Alcedo.Frontend.Blazor.Layout
+@using Alcedo.Frontend.Identity.Clients.Auth
+@attribute [AllowAnonymous]
+@inject NavigationManager Nav
+@inject IAuthClient AuthClient
+@inject AlcedoRequestService Request
+@layout EmptyLayout
+
+<MudOverlay Visible="true" DarkBackground="true" Absolute="false" ZIndex="9999">
+    <div class="d-flex flex-column align-center">
+        <MudProgressCircular Color="Color.Warning" Indeterminate="true" Size="Size.Large"/>
+        <MudText Typo="Typo.h6" Color="Color.Warning" Class="mt-4">Session Expired, Redirecting To Login...</MudText>
+    </div>
+</MudOverlay>
+
+@code {
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            using var cts = new CancellationTokenSource(2000);
+
+            try
+            {
+                await AuthClient.LogOutAsync(cts.Token); //Don't use request service, since it will capture error and show dialog, want errors here be ignored
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("[LogOut] Timeout hit, task canceled.");
+            }
+            catch
+            {
+                //ignore
+            }
+
+            Nav.NavigateTo("/login", replace: true);
+        }
+    }
+
+}

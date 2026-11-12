@@ -1,0 +1,19 @@
+@if (Item.HasChildren)
+{
+    <MudNavGroup Title="@Item.Title" Icon="@Item.Icon">
+        @foreach (var child in Item.Children)
+        {
+            <NavItemRenderer Item="@child"/>
+        }
+    </MudNavGroup>
+}
+else
+{
+    <MudNavLink Href="@Item.Href" Icon="@Item.Icon" Match="NavLinkMatch.All">
+        @Item.Title
+    </MudNavLink>
+}
+
+@code {
+    [Parameter] public required NavItem Item { get; set; }
+}

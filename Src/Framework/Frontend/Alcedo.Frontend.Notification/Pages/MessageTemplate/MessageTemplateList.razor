@@ -1,0 +1,11 @@
+@page "/notification/templates"
+@inject IMessageTemplate Client
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Notification.BackendInterface
+
+<MasterDataListPage TDto="MessageTemplateDto"
+                    TSearch="MessageTemplateSearchQuery"
+                    Title="Templates"
+                    CreateHref="/notification/templates/new"
+                    StateClient="Client"
+                    SearchClient="Client"/>

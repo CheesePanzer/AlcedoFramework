@@ -1,0 +1,96 @@
+@typeparam TItem
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Blazor.Components.Auto
+@inject AlcedoRequestService RequestService
+
+@if (_result is not null)
+{
+    <MudCard Outlined="true" Class="mt-2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6" Class="ml-4">@Title</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Assignment"
+                           OnClick="@OnAssignClicked"
+                           Class="me-2">
+                    @AssignLabel
+                </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="@HandleDelete">
+                    @DeleteLabel
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <AutoTable TItem="TItem"
+                       Items="_result.Items"
+                       Selectable="true"
+                       SelectedItemsChanged="OnSelected"/>
+            @if (FetchPagedAsync is not null)
+            {
+                <Pagination Query="_paginationQuery"
+                            OnChanged="LoadData"
+                            TotalItems="_result.TotalCount"/>
+            }
+        </MudCardContent>
+    </MudCard>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = null!;
+    [Parameter, EditorRequired] public EventCallback OnAssignClicked { get; set; }
+    [Parameter, EditorRequired] public EventCallback<IReadOnlyList<TItem>> OnBatchDelete { get; set; }
+    [Parameter] public Func<PaginationQuery, Task<PagedResult<TItem>>>? FetchPagedAsync { get; set; }
+    [Parameter] public Func<Task<IReadOnlyList<TItem>>>? FetchSimpleAsync { get; set; }
+    [Parameter] public string AssignLabel { get; set; } = "Batch Assign";
+    [Parameter] public string DeleteLabel { get; set; } = "Batch Delete";
+
+    private PagedResult<TItem>? _result;
+    private readonly PaginationQuery _paginationQuery = new();
+    private IReadOnlyList<TItem> _selectedItems = [];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+        }
+    }
+
+    public async Task RefreshAsync()
+    {
+        _paginationQuery.PageNo = 1;
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (FetchPagedAsync is not null)
+        {
+            _result = await RequestService.ExecuteAsync(() => FetchPagedAsync(_paginationQuery));
+        }
+        else if (FetchSimpleAsync is not null)
+        {
+            var items = await RequestService.ExecuteAsync(FetchSimpleAsync);
+            _result = items is null ? null : new PagedResult<TItem>
+            {
+                PageNo = 1,
+                PageSize = items.Count,
+                TotalCount = items.Count,
+                Items = items
+            };
+        }
+    }
+
+    private void OnSelected(IReadOnlyList<TItem> selected)
+        => _selectedItems = selected;
+
+    private Task HandleDelete()
+        => OnBatchDelete.InvokeAsync(_selectedItems);
+}

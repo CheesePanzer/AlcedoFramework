@@ -1,0 +1,201 @@
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.Dto
+@inject AlcedoRequestService RequestService
+
+<MudDrawer @bind-Open="_isOpen"
+           Anchor="Anchor.Right"
+           Elevation="16"
+           Variant="@DrawerVariant.Temporary"
+           Width="480px">
+
+    <MudDrawerHeader Class="align-center justify-space-between border-b border-solid mud-border-default px-6 py-4">
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Color="Color.Primary"/>
+            <MudText Typo="Typo.h6" Class="font-weight-bold">Audit Log</MudText>
+        </div>
+        <div class="d-flex align-center gap-2">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true"/>
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Edge="Edge.End" OnClick="CloseDrawer"/>
+        </div>
+    </MudDrawerHeader>
+
+    <div class="flex-grow-1 overflow-y-auto px-6 py-4" style="height: calc(100vh - 130px);">
+        @if (_isLoading && (_pagedResult?.TotalCount ?? 0) == 0)
+        {
+            <div class="d-flex flex-column align-center justify-center h-100 opacity-50 py-12">
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" Style="width: 50%;"/>
+                <MudText Typo="Typo.caption" Class="font-weight-bold">LOADING...</MudText>
+            </div>
+        }
+        else if (_pagedResult?.TotalCount == 0 || _pagedResult is null)
+        {
+            <div class="d-flex align-center justify-center h-100 opacity-50 py-12">
+                <MudText Typo="Typo.body2" Class="font-style-italic font-weight-bold">NO DATA</MudText>
+            </div>
+        }
+        else
+        {
+            <MudTimeline TimelinePosition="TimelinePosition.Start" Modifiers="true" Dense="true">
+                @foreach (var item in _pagedResult.Items)
+                {
+                    <MudTimelineItem Color="Color.Primary" Size="Size.Small">
+                        <MudCard Outlined="true" Class="mb-2 mud-background-gray shadow-sm">
+                            <MudCardContent Class="pa-4">
+                                <div class="d-flex justify-space-between align-center mb-2">
+                                    <div class="d-flex align-center gap-1 opacity-60">
+                                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small"/>
+                                        <MudText Typo="Typo.caption" Class="font-monospace">
+                                            @item.OperatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                                        </MudText>
+                                    </div>
+                                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Text" Size="Size.Small"
+                                             Class="font-weight-bold">
+                                        @item.FromStatusName → @item.ToStatusName
+                                    </MudChip>
+                                </div>
+
+                                <MudText Typo="Typo.body1" Class="font-weight-bold text-uppercase mb-2 text-primary">
+                                    @item.OperationName
+                                </MudText>
+
+                                @if (!string.IsNullOrWhiteSpace(item.Note))
+                                {
+                                    <div
+                                        class="pa-2 border-l-4 border-solid mud-border-primary mud-bg-opacity-10 opacity-80 font-style-italic mb-2"
+                                        style="background-color: var(--mud-palette-background-grey);">
+                                        <MudText Typo="Typo.body2">@item.Note</MudText>
+                                    </div>
+                                }
+
+                                <div class="mt-2 pt-2 border-t border-dashed mud-border-default opacity-50">
+                                    <MudText Typo="Typo.caption"
+                                             Class="font-weight-bold tracking-widest text-uppercase">
+                                        BY: @item.Operator.SnapShot
+                                    </MudText>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudTimelineItem>
+                }
+            </MudTimeline>
+        }
+    </div>
+
+    <div class="pa-4 border-t border-solid mud-border-default mud-background-gray">
+        <div class="d-flex align-center justify-space-between">
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Text"
+                       Disabled="@(_currentPage <= 1 || _isLoading)"
+                       OnClick="PrePageAsync"
+                       Class="font-weight-bold">
+                PREV
+            </MudButton>
+
+            <MudText Typo="Typo.caption" Class="font-weight-bold font-style-italic">
+                @_currentPage / @(_pagedResult?.TotalPages ?? 1)
+            </MudText>
+
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Text"
+                       Disabled="@(_currentPage >= (_pagedResult?.TotalPages ?? 1) || _isLoading)"
+                       OnClick="NextPageAsync"
+                       Class="font-weight-bold">
+                NEXT
+            </MudButton>
+        </div>
+    </div>
+
+</MudDrawer>
+
+@code {
+    private bool _isOpen;
+    private bool _isLoading;
+    private int _currentPage = 1;
+    private const int PageSize = 10;
+    private Guid _currentEntityId;
+    private PagedResult<MasterDataAuditLogDto>? _pagedResult;
+
+    [Parameter] public Func<MasterDataLogSearchQuery, SortQuery, PaginationQuery, Task<PagedResult<MasterDataAuditLogDto>>>? FetchLogsAsync { get; set; }
+
+    /// <summary>
+    /// 外部调用的公共打开方法
+    /// </summary>
+    public async Task OpenAsync(Guid entityId)
+    {
+        _currentEntityId = entityId;
+        _currentPage = 1;
+        _pagedResult = null;
+        _isOpen = true;
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (FetchLogsAsync is null || _currentEntityId == Guid.Empty)
+        {
+            return;
+        }
+
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+
+            var searchQuery = new MasterDataLogSearchQuery()
+            {
+                AggregateId = _currentEntityId,
+            };
+
+            var paginationQuery = new PaginationQuery
+            {
+                PageNo = _currentPage,
+                PageSize = PageSize
+            };
+            
+            var sortQuery = new SortQuery()
+            {
+                Fields =
+                [
+                    new SortField()
+                    {
+                        Field = nameof(MasterDataAuditLogDto.OperatedAt),
+                    }
+                ]
+            };
+
+            _pagedResult = await RequestService.ExecuteAsync(() => FetchLogsAsync(searchQuery, sortQuery, paginationQuery));
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PrePageAsync()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_pagedResult is not null && _currentPage < _pagedResult.TotalPages)
+        {
+            _currentPage++;
+            await LoadDataAsync();
+        }
+    }
+
+    private void CloseDrawer()
+    {
+        _isOpen = false;
+    }
+
+}

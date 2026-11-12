@@ -1,0 +1,111 @@
+@page "/identity/users"
+@inject IUserClient UsersClient
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.StateMachine
+@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Blazor.Components.MasterData
+@using Alcedo.Frontend.Identity.Clients.User
+@inject AlcedoRequestService RequestService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudText Typo="Typo.h4">Users</MudText>
+        <MudSpacer/>
+        <MasterDataTableActionToolBar TItem="UserDto"
+                                      Client="UsersClient"
+                                      SelectedItems="_selectedUsers"
+                                      Flow="new MasterDataDefaultStatusFlow()"
+                                      Guard="new MasterDataArchiveOperationGuard()"
+                                      ExtraActions="ExtraActions"
+                                      OnDataChanged="LoadPagedResult"/>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   Color="Color.Primary"
+                   Href="/identity/users/new">
+            Add New User
+        </MudButton>
+    </MudToolBar>
+
+    <AutoSearch TQuery="UserSearchQuery"
+                Query="_searchQuery"
+                SortQuery="_sortQuery"
+                SortFields="@(new MasterDataSortPreset().Build())"
+                OnSearch="ExecuteSearch"/>
+
+    @if (_pagedResult != null)
+    {
+        <AutoTable TItem="UserDto"
+                   Items="_pagedResult.Items"
+                   Selectable="true"
+                   SelectedItemsChanged="OnSelected"/>
+        <Pagination Query="_paginationQuery"
+                    OnChanged="LoadPagedResult"
+                    TotalItems="_pagedResult.TotalCount"></Pagination>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">Table Has No Records</MudAlert>
+    }
+
+</MudContainer>
+
+@code {
+    private PagedResult<UserDto>? _pagedResult = null;
+
+    private UserSearchQuery _searchQuery = new UserSearchQuery();
+
+    private SortQuery _sortQuery = new SortQuery();
+
+    private PaginationQuery _paginationQuery = new PaginationQuery();
+
+    private IReadOnlyList<UserDto> _selectedUsers = new List<UserDto>();
+
+    private IReadOnlyList<MasterDataTableActionToolBar<UserDto>.ActionMetadata> ExtraActions =>
+    [
+        new(
+            Label: "Archive",
+            Icon: Icons.Material.Filled.Archive,
+            Color: Color.Secondary,
+            Action: MasterDataStateActions.Archive,
+            Execute: (items, rs) => rs.ExecuteAsync(
+                items.Select(item => (Func<Task>)(() => UsersClient.ArchiveAsync(item.Id))).ToList(),
+                opt => opt.WithSuccessMsg()
+                    .WithConfirmation($"Archive {items.Count} item(s)?"))
+        )
+    ];
+
+    private readonly IReadOnlyList<string> _allowedSortFields = new List<string>
+    {
+        nameof(UserDto.UserName),
+        nameof(UserDto.CreatedAt),
+        nameof(UserDto.UpdatedAt)
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPagedResult();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExecuteSearch()
+    {
+        _paginationQuery.PageNo = 1;
+        await LoadPagedResult();
+    }
+
+    private async Task LoadPagedResult()
+    {
+        _pagedResult = await RequestService.ExecuteAsync(() => UsersClient.GetListAsync(_searchQuery, _sortQuery, _paginationQuery));
+    }
+
+    private void OnSelected(IReadOnlyList<UserDto> selected)
+    {
+        _selectedUsers = selected.ToList();
+    }
+
+}

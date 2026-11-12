@@ -1,0 +1,41 @@
+@typeparam TModel where TModel : class
+@inject AutoValidatorService Validator
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <AutoForm TCommand="TModel" Model="Model" IsReadOnly="false"/>
+            @ChildContent
+        </MudGrid>
+        @OuterGridChildContent
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@Confirm">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public required TModel Model { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? OuterGridChildContent { get; set; }
+    [Parameter] public bool ValidateOnConfirm { get; set; } = true;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Confirm()
+    {
+        if (ValidateOnConfirm)
+        {
+            var valid = await Validator.ValidateAsync(Model);
+            if (!valid)
+            {
+                return;
+            }
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+}

@@ -1,0 +1,56 @@
+@page "/identity/users/new"
+@using Alcedo.Frontend.Blazor.Components.Auto
+@using Alcedo.Frontend.Identity.Clients.User
+@using Alcedo.Frontend.Identity.Components
+
+@inject IUserClient UserClient
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudLink StartIcon="@Icons.Material.Filled.ArrowBack" Color="Color.Secondary" Uncontrolled="true" href="/identity/users" Class="d-flex align-center">
+            Back
+        </MudLink>
+        <MudText Typo="Typo.h6" Class="ml-4">User Detail</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Primary" OnClick="Save">Save</MudButton>
+    </MudToolBar>
+    <MudCard Outlined="true">
+        <MudCardContent>
+            <MudGrid>
+                <AutoForm Model="_newUser" DefaultColumns="3"/>
+                <MudItem xs="12" sm="4">
+                <PasswordStrengthInput Value="@_newUser.PlainPassword"
+                                       ValueChanged="@((string? v) => _newUser.PlainPassword = v ?? "")"
+                                       Label="Initial Password*"
+                                       IsValidChanged="@(v => IsStrongEnough = v)" />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code
+{
+    private UserCreateCommand _newUser = new ();
+    
+    private bool IsStrongEnough { get; set; }
+
+    private async Task Save(MouseEventArgs arg)
+    {
+        if (!await AutoValidator.ValidateAsync(_newUser))
+        {
+            return;
+        }
+        if (!IsStrongEnough)
+        {
+            await DialogService.ShowMessageBoxAsync("Error", "Password is too simple");
+            return;
+        }
+        var id = await RequestService.ExecuteAsync(() => UserClient.CreateAsync(_newUser),opt => opt.WithSuccessMsg());
+        if (id == Guid.Empty)
+        {
+            return;
+        }
+        NavigationManager.NavigateTo($"/identity/users/{id}");
+    }
+}

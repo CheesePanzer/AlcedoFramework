@@ -1,0 +1,19 @@
+﻿@using Alcedo.Frontend.Blazor.Components
+@using Alcedo.Frontend.Blazor.Layout
+@using Alcedo.Frontend.Blazor.Pages
+@using Alcedo.Frontend.Core
+@using Alcedo.Frontend.Identity.Components
+@inject AlcedoModulesRegistry Registry
+<MudBlazorProvider>
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(NotFound)"
+            AdditionalAssemblies="@(Registry.Modules.Assemblies)">
+        <Found Context="routeData">
+            <GlobalErrorBoundary>
+                <AlcedoIdentityRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+
+                </AlcedoIdentityRouteView>
+            </GlobalErrorBoundary>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
+        </Found>
+    </Router>
+</MudBlazorProvider>

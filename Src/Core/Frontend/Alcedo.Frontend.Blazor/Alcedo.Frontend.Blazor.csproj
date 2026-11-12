@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Alcedo.Frontend.Abstraction\Alcedo.Frontend.Abstraction.csproj"/>
+        <ProjectReference Include="..\Alcedo.Frontend.Core\Alcedo.Frontend.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MudBlazor" Version="9.4.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AdditionalFiles Include="Layout\EmptyLayout.razor"/>
+        <AdditionalFiles Include="Layout\MainLayout.razor"/>
+        <AdditionalFiles Include="Layout\NavMenu.razor"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Alcedo.Frontend.Host"/>
+    </ItemGroup>
+
+</Project>

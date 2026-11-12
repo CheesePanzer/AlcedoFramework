@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>CheesePanzer</Authors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Alcedo.Core.Abstractions\Alcedo.Core.Abstractions.csproj"/>
+        <ProjectReference Include="..\Alcedo.Core.Infrastructure\Alcedo.Core.Infrastructure.csproj"/>
+        <ProjectReference Include="..\Alcedo.Core.Plugin.SmartDoc\Alcedo.Core.Plugin.SmartDoc.csproj" />
+        <ProjectReference Include="..\Alcedo.Core.Presentation.Mvc\Alcedo.Core.Presentation.Mvc.csproj" />
+        <ProjectReference Include="..\Alcedo.Core.Presentation\Alcedo.Core.Presentation.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0"/>
+        <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="9.0.0"/>
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.14.11" />
+    </ItemGroup>
+
+</Project>

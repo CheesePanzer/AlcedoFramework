@@ -1,0 +1,125 @@
+@page "/login"
+@using Alcedo.Frontend.Blazor.Layout
+@using Alcedo.Frontend.Identity.Clients.Auth
+@using Alcedo.Frontend.Identity.Components
+@using Alcedo.Frontend.Identity.Providers
+@attribute [AllowAnonymous]
+@layout EmptyLayout
+@inject AuthStateProvider AuthState
+@inject NavigationManager Nav
+@inject IDialogService DialogService
+@inject IAuthClient AuthApi
+@inject AlcedoFrontendBlazorOptions Options
+@inject AlcedoRequestService Request
+
+<MudGrid Justify="Justify.Center" Style="min-height:100vh; align-items:center;">
+    <MudItem xs="12" sm="5" md="4">
+        <MudPaper Outlined="true" Class="pa-8">
+
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="mb-8" Spacing="2">
+                <MudText Typo="Typo.h3" Color="Color.Primary" Class="font-weight-bold">Login</MudText>
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                    <AlcedoLogo Width="32" Height="32"/>
+                    <MudText Typo="Typo.h6" Color="Color.Default">@Options.AppDisplayName</MudText>
+                </MudStack>
+            </MudStack>
+
+            <MudTextField @bind-Value="authCommand.LoginName"
+                          Label="Account"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Outlined.EmojiPeople"
+                          Class="mb-4"/>
+
+            <MudTextField @bind-Value="authCommand.Password"
+                          Label="Password"
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Outlined.Key"
+                          Class="mb-1"/>
+
+            <div style="text-align:right; margin-bottom:1.5rem;">
+                <MudLink Href="/forgot-password" Typo="Typo.caption">Forgot password?</MudLink>
+            </div>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       StartIcon="@Icons.Material.Outlined.Login"
+                       OnClick="HandleLogin">
+                Sign in
+            </MudButton>
+
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+
+    private AuthCommand authCommand = new AuthCommand()
+    {
+        LoginName = "",
+        Password = "",
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (await AuthState.GetAuthenticationStateAsync())
+            {
+                Nav.NavigateTo("/");
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        if (!authCommand.IsValid)
+        {
+            await DialogService.ShowMessageBoxAsync("Please Enter Login Name or Password", "Login");
+        }
+
+        var result = await Request.ExecuteAsync(() => AuthApi.LoginAsync(authCommand));
+        if (result is null)
+        {
+            return;
+        }
+
+        if (result.UseTotp)
+        {
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = false,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+                NoHeader = true
+            };
+
+            var parameters = new DialogParameters { ["PendingToken"] = result.PendingToken };
+
+            var dialog = await DialogService.ShowAsync<TotpVerifyDialog>(string.Empty, parameters, options);
+            var dialogResult = await dialog.Result;
+
+            if (dialogResult is not null && !dialogResult.Canceled && dialogResult.Data is AuthTokenTotpPhaseResult totpResult)
+            {
+                await AuthState.LoginAsync(totpResult.AccessToken, totpResult.ValidUntil, totpResult.RequirePasswordReset);
+
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            await AuthState.LoginAsync(result.AccessToken, result.ValidUntil!.Value, result.RequirePasswordReset);
+        }
+
+        Nav.NavigateTo("/");
+    }
+
+}

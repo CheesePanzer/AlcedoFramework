@@ -1,0 +1,395 @@
+@typeparam TCommand
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Linq.Expressions
+@using System.Reflection
+@using Alcedo.Frontend.Abstraction.Attributes
+@using Alcedo.Frontend.Abstraction.StateMachine
+
+@foreach (var prop in GetProperties())
+{
+    <MudItem xs="12" sm="@GetColumnSpan(prop)">
+        @RenderField(prop)
+    </MudItem>
+}
+
+@code {
+    [Parameter] public required TCommand Model { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public int DefaultColumns { get; set; } = 4;
+    [Parameter] public Variant FieldStyle { get; set; } = Variant.Outlined;
+    [Parameter] public bool OnlyRenderWritable { get; set; } = false;
+
+    private int ColumnSpan => 12 / DefaultColumns;
+
+    private IEnumerable<PropertyInfo> GetProperties()
+        => AutoComponentOrderedProperties.Get(typeof(TCommand))
+            .Where(p => (!OnlyRenderWritable || p.CanWrite)
+                        && p.GetCustomAttribute<AutoFormIgnoreRenderAttribute>() is null
+                        && !IsCollectionType(p.PropertyType));
+
+    private RenderFragment RenderField(PropertyInfo prop) => builder =>
+    {
+        var label = prop.GetCustomAttribute<AutoRenderLabelAttribute>()?.Label ?? prop.Name;
+        var isValueAtom = typeof(ValueAtom).IsAssignableFrom(prop.PropertyType);
+        var value = prop.GetValue(Model);
+        var isNullable = Nullable.GetUnderlyingType(prop.PropertyType) is not null || new NullabilityInfoContext().Create(prop).WriteState == NullabilityState.Nullable;
+        ;
+        var type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+        var isReadOnly = IsReadOnly || !prop.CanWrite || prop.GetCustomAttribute<AutoFormRenderReadOnlyAttribute>() is not null;
+        if (isValueAtom)
+        {
+            FieldStyle = Variant.Text;
+        }
+
+        var isTextArea = prop.GetCustomAttribute<AutoFormRenderTextAreaAttribute>() is { } textAreaAttr;
+
+        var helper = prop.GetCustomAttribute<AutoFormRenderHelperAttribute>()?.Helper ?? "";
+
+        if (!isNullable)
+        {
+            label += "*";
+        }
+
+        if (type == typeof(bool))
+        {
+            builder.OpenComponent<MudSwitch<bool>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Value", value ?? false);
+            builder.AddAttribute(3, "ReadOnly", isReadOnly);
+            builder.AddAttribute(4, "ValueChanged", EventCallback.Factory.Create<bool>(this,
+                v => prop.SetValue(Model, v)));
+            builder.AddAttribute(5, "Color", Color.Info);
+            builder.CloseComponent();
+        }
+        else if (type == typeof(DateTime))
+        {
+            builder.OpenComponent<MudDatePicker>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", FieldStyle);
+            builder.AddAttribute(3, "Clearable", isNullable && !isReadOnly);
+            builder.AddAttribute(4, "ReadOnly", isReadOnly);
+            builder.AddAttribute(5, "Date", value is DateTime dt ? dt : (DateTime?)null);
+            builder.AddAttribute(6, "DateChanged", EventCallback.Factory.Create<DateTime?>(this, v =>
+                prop.SetValue(Model, isNullable ? v : v ?? DateTime.MinValue)));
+            builder.CloseComponent();
+        }
+        else if (type == typeof(DateTimeOffset))
+        {
+            if (isReadOnly)
+            {
+                var inputType = InputType.Text;
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", value is DateTimeOffset dto ? dto.LocalDateTime.ToString(CultureInfo.InvariantCulture) : "");
+                builder.AddAttribute(4, "InputType", inputType);
+                builder.AddAttribute(5, "ReadOnly", isReadOnly);
+                builder.CloseComponent();
+            }
+            else
+            {
+                builder.OpenComponent<MudDatePicker>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Clearable", isNullable && !isReadOnly);
+                builder.AddAttribute(4, "ReadOnly", isReadOnly);
+                builder.AddAttribute(5, "Date", value is DateTimeOffset dto ? dto.LocalDateTime : (DateTime?)null);
+                builder.AddAttribute(6, "DateChanged", EventCallback.Factory.Create<DateTime?>(this, v =>
+                {
+                    if (v is null)
+                    {
+                        prop.SetValue(Model, isNullable ? (DateTimeOffset?)null : DateTimeOffset.MinValue);
+                    }
+                    else
+                    {
+                        prop.SetValue(Model, new DateTimeOffset(v.Value, TimeZoneInfo.Local.GetUtcOffset(v.Value)));
+                    }
+                }));
+                builder.CloseComponent();
+            }
+        }
+        else if (type.IsEnum)
+        {
+            var selectType = isNullable
+                ? typeof(Nullable<>).MakeGenericType(type)
+                : type;
+
+            builder.OpenComponent(0, typeof(MudSelect<>).MakeGenericType(selectType));
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", FieldStyle);
+            builder.AddAttribute(3, "Value", value is null ? null : Convert.ChangeType(value, type));
+            builder.AddAttribute(4, "Clearable", isNullable && !isReadOnly);
+            builder.AddAttribute(5, "ReadOnly", isReadOnly);
+            builder.AddAttribute(6, "ValueChanged", CreateEnumValueChangedCallback(prop, selectType));
+            builder.AddAttribute(7, "ShrinkLabel", isReadOnly);
+            builder.AddAttribute(8, "ChildContent", (RenderFragment)(childBuilder =>
+            {
+                var seq = 0;
+
+                if (isNullable)
+                {
+                    var nullItem = typeof(MudSelectItem<>).MakeGenericType(selectType);
+                    childBuilder.OpenComponent(seq++, nullItem);
+                    childBuilder.AddAttribute(seq++, "Value", (object?)null);
+                    childBuilder.AddContent(seq++, "--");
+                    childBuilder.CloseComponent();
+                }
+
+                foreach (var enumValue in Enum.GetValues(type))
+                {
+                    var itemType = typeof(MudSelectItem<>).MakeGenericType(selectType);
+                    childBuilder.OpenComponent(seq++, itemType);
+                    childBuilder.AddAttribute(seq++, "Value", enumValue);
+                    childBuilder.AddContent(seq++, enumValue.ToString());
+                    childBuilder.CloseComponent();
+                }
+            }));
+            builder.CloseComponent();
+        }
+        else if (isTextArea)
+        {
+            var textAreaLines = prop.GetCustomAttribute<AutoFormRenderTextAreaAttribute>()!.Lines;
+            var textAreaMaxLines = prop.GetCustomAttribute<AutoFormRenderTextAreaAttribute>()!.MaxLines;
+
+            builder.OpenComponent<MudTextField<string>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", FieldStyle);
+            builder.AddAttribute(3, "Value", value?.ToString() ?? "");
+            builder.AddAttribute(4, "ReadOnly", isReadOnly);
+            builder.AddAttribute(5, "Lines", textAreaLines);
+            builder.AddAttribute(6, "AutoGrow", true);
+            builder.AddAttribute(7, "ValueChanged", EventCallback.Factory.Create<string>(this,
+                v => prop.SetValue(Model, ConvertValue(v, prop.PropertyType))));
+            builder.AddAttribute(8, "HelperText", helper);
+            builder.AddAttribute(9, "Clearable", isNullable && !isReadOnly);
+            builder.AddAttribute(10, "ShrinkLabel", isReadOnly);
+            if (textAreaMaxLines is not null && textAreaMaxLines > textAreaLines)
+            {
+                builder.AddAttribute(11, "MaxLines", textAreaMaxLines);
+                builder.AddAttribute(12, "Sizing", InputSizing.Auto);
+            }
+
+            builder.CloseComponent();
+        }
+        else if (isValueAtom)
+        {
+            if (isReadOnly)
+            {
+                var displayValue = value is ValueAtom atom
+                    ? atom.Value
+                    : isNullable
+                        ? "--"
+                        : "";
+
+                builder.OpenComponent<MudTextField<string>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", displayValue);
+                builder.AddAttribute(4, "ReadOnly", true);
+                builder.AddAttribute(5, "ShrinkLabel", true);
+                builder.CloseComponent();
+            }
+            else
+            {
+                var optionsAttr = prop.GetCustomAttribute<AutoComponentValueAtomOptionsAttribute>();
+                var options = optionsAttr is not null
+                    ? optionsAttr.OptionsType
+                        .GetFields(BindingFlags.Public | BindingFlags.Static)
+                        .Where(f => typeof(ValueAtom).IsAssignableFrom(f.FieldType))
+                        .Select(f => f.GetValue(null) as ValueAtom)
+                        .Where(v => v is not null)
+                        .ToList()
+                    : new List<ValueAtom?>();
+
+                builder.OpenComponent<MudSelect<ValueAtom>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", value as ValueAtom);
+                builder.AddAttribute(4, "Clearable", isNullable);
+                builder.AddAttribute(5, "ValueChanged", EventCallback.Factory.Create<ValueAtom>(this,
+                    v => prop.SetValue(Model, v)));
+                builder.AddAttribute(6, "ToStringFunc", (Func<ValueAtom?, string?>)(v => v?.Value ?? "--"));
+                builder.AddAttribute(7, "ChildContent", (RenderFragment)(childBuilder =>
+                {
+                    var seq = 0;
+
+                    if (isNullable)
+                    {
+                        childBuilder.OpenComponent<MudSelectItem<ValueAtom>>(seq++);
+                        childBuilder.AddAttribute(seq++, "Value", (ValueAtom?)null);
+                        childBuilder.AddContent(seq++, "--");
+                        childBuilder.CloseComponent();
+                    }
+
+                    foreach (var option in options)
+                    {
+                        var captured = option;
+                        childBuilder.OpenComponent<MudSelectItem<ValueAtom>>(seq++);
+                        childBuilder.AddAttribute(seq++, "Value", captured);
+                        childBuilder.AddContent(seq++, captured!.Value);
+                        childBuilder.CloseComponent();
+                    }
+                }));
+                builder.CloseComponent();
+            }
+        }
+        else if (type == typeof(string) || type == typeof(Guid))
+        {
+            var inputType = InputType.Text;
+            builder.OpenComponent<MudTextField<string>>(0);
+            builder.AddAttribute(1, "Label", label);
+            builder.AddAttribute(2, "Variant", FieldStyle);
+            builder.AddAttribute(3, "Value", value?.ToString() ?? "");
+            builder.AddAttribute(4, "InputType", inputType);
+            builder.AddAttribute(5, "ReadOnly", isReadOnly);
+            builder.AddAttribute(6, "Clearable", isNullable && !isReadOnly);
+            builder.AddAttribute(7, "ValueChanged", EventCallback.Factory.Create<string>(this,
+                v => prop.SetValue(Model, ConvertValue(v, prop.PropertyType))));
+            builder.AddAttribute(8, "HelperText", helper);
+            builder.AddAttribute(9, "ShrinkLabel", isReadOnly);
+            builder.CloseComponent();
+        }
+        else
+        {
+            var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
+
+            if (type == typeof(int))
+            {
+                builder.OpenComponent<MudNumericField<int>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", value is int i ? i : 0);
+                builder.AddAttribute(4, "ReadOnly", isReadOnly);
+                builder.AddAttribute(5, "Clearable", isNullable && !isReadOnly);
+                builder.AddAttribute(6, "ValueChanged", EventCallback.Factory.Create<int>(this, v => prop.SetValue(Model, v)));
+
+                int seq = 7;
+                if (rangeAttr is not null)
+                {
+                    builder.AddAttribute(seq++, "Min", Convert.ToInt32(rangeAttr.Minimum));
+                    builder.AddAttribute(seq++, "Max", Convert.ToInt32(rangeAttr.Maximum));
+                }
+
+                builder.AddAttribute(seq++, "HelperText", helper);
+                builder.AddAttribute(seq++, "ShrinkLabel", isReadOnly);
+                builder.CloseComponent();
+            }
+            else if (type == typeof(long))
+            {
+                builder.OpenComponent<MudNumericField<long>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", value is long l ? l : 0L);
+                builder.AddAttribute(4, "ReadOnly", isReadOnly);
+                builder.AddAttribute(5, "Clearable", isNullable && !isReadOnly);
+                builder.AddAttribute(6, "ValueChanged", EventCallback.Factory.Create<long>(this, v => prop.SetValue(Model, v)));
+
+                int seq = 7;
+                if (rangeAttr is not null)
+                {
+                    builder.AddAttribute(seq++, "Min", Convert.ToInt64(rangeAttr.Minimum));
+                    builder.AddAttribute(seq++, "Max", Convert.ToInt64(rangeAttr.Maximum));
+                }
+
+                builder.AddAttribute(seq++, "HelperText", helper);
+                builder.AddAttribute(seq++, "ShrinkLabel", isReadOnly);
+                builder.CloseComponent();
+            }
+            else // decimal 分支
+            {
+                builder.OpenComponent<MudNumericField<decimal>>(0);
+                builder.AddAttribute(1, "Label", label);
+                builder.AddAttribute(2, "Variant", FieldStyle);
+                builder.AddAttribute(3, "Value", value is decimal d ? d : 0M);
+                builder.AddAttribute(4, "ReadOnly", isReadOnly);
+                builder.AddAttribute(5, "Clearable", isNullable && !isReadOnly);
+                builder.AddAttribute(6, "ValueChanged", EventCallback.Factory.Create<decimal>(this, v => prop.SetValue(Model, v)));
+
+                int seq = 7;
+                if (rangeAttr is not null)
+                {
+                    builder.AddAttribute(seq++, "Min", Convert.ToDecimal(rangeAttr.Minimum));
+                    builder.AddAttribute(seq++, "Max", Convert.ToDecimal(rangeAttr.Maximum));
+                }
+
+                var stepAttr = prop.GetCustomAttribute<AutoFormNumericStepAttribute>();
+                if (stepAttr is not null)
+                {
+                    builder.AddAttribute(seq++, "Step", decimal.Parse(stepAttr.Step));
+                }
+
+                builder.AddAttribute(seq++, "HelperText", helper);
+                builder.AddAttribute(seq++, "ShrinkLabel", isReadOnly);
+                builder.CloseComponent();
+            }
+        }
+    };
+
+    private object CreateEnumValueChangedCallback(PropertyInfo prop, Type enumOrNullableType)
+    {
+        Action<object?> setter = v => prop.SetValue(Model, v);
+
+        var actionType = typeof(Action<>).MakeGenericType(enumOrNullableType);
+
+        var param = Expression.Parameter(enumOrNullableType, "v");
+        var body = Expression.Invoke(
+            Expression.Constant(setter),
+            Expression.Convert(param, typeof(object)));
+        var typedAction = Expression.Lambda(actionType, body, param).Compile();
+
+        var createMethod = typeof(EventCallbackFactory)
+            .GetMethods()
+            .First(m =>
+                m.Name == "Create" &&
+                m.IsGenericMethod &&
+                m.GetParameters() is { Length: 2 } ps &&
+                ps[1].ParameterType.IsGenericType &&
+                ps[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
+            .MakeGenericMethod(enumOrNullableType);
+
+        return createMethod.Invoke(EventCallback.Factory, [this, typedAction])!;
+    }
+
+    private object? ConvertValue(string raw, Type targetType)
+    {
+        var isNullable = Nullable.GetUnderlyingType(targetType) is not null;
+        var type = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (string.IsNullOrEmpty(raw))
+        {
+            return isNullable
+                ? null
+                : type switch
+                {
+                    _ when type == typeof(string) => "",
+                    _ when type == typeof(Guid) => Guid.Empty,
+                    _ when type == typeof(int) => 0,
+                    _ when type == typeof(decimal) => 0m,
+                    _ when type == typeof(double) => 0d,
+                    _ => default
+                };
+        }
+
+        return type switch
+        {
+            _ when type == typeof(string) => raw,
+            _ when type == typeof(Guid) => Guid.TryParse(raw, out var g) ? g : (isNullable ? null : Guid.Empty),
+            _ when type == typeof(int) => int.TryParse(raw, out var i) ? i : (isNullable ? null : (object)0),
+            _ when type == typeof(decimal) => decimal.TryParse(raw, out var d) ? d : (isNullable ? null : (object)0m),
+            _ when type == typeof(double) => double.TryParse(raw, out var d) ? d : (isNullable ? null : (object)0d),
+            _ => raw
+        };
+    }
+
+    private static bool IsCollectionType(Type type) =>
+        type != typeof(string)
+        && typeof(System.Collections.IEnumerable).IsAssignableFrom(type);
+
+    private int GetColumnSpan(PropertyInfo prop)
+    {
+        var width = prop.GetCustomAttribute<AutoFormCellWidthAttribute>()?.Width ?? ColumnSpan;
+        return width is > 0 ? Math.Min(width, 12) : ColumnSpan;
+    }
+
+}

@@ -1,0 +1,8 @@
+@page "/identity/permissions"
+@using Alcedo.Frontend.Blazor.Components.Shared
+@using Alcedo.Frontend.Identity.Clients.Perm
+@inject IPermClient PermClient
+<GenericListPage TDto="PermDto"
+                 TSearch="PermSearchQuery"
+                 Title="Permissions"
+                 SearchClient="PermClient"/>

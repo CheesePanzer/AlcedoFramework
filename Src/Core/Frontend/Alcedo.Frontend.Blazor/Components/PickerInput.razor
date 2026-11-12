@@ -1,0 +1,80 @@
+@typeparam TItem where TItem : class
+@typeparam TQuery where TQuery : new()
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Blazor.Components.Auto
+@inject IDialogService DialogService
+
+<MudTextField Value="@_currentDisplay"
+              Label="@Label"
+              Variant="@Variant"
+              ReadOnly="true"
+              Adornment="Adornment.End"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              OnAdornmentClick="OpenPicker"
+              Clearable="@Clearable"
+              OnClearButtonClick="OnClear"
+              Class="@Class" />
+
+@code {
+    [Parameter] public string? DisplayText { get; set; }
+    [Parameter] public Func<TItem, string>? DisplayTextFunc { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public bool Clearable { get; set; } = true;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string DialogTitle { get; set; } = "Select";
+    [Parameter, EditorRequired] public IPagedQueryController<TItem, TQuery> Client { get; set; } = null!;
+    [Parameter] public IReadOnlyList<string> SortFields { get; set; } = [];
+    [Parameter] public EventCallback<TItem?> OnSelected { get; set; }
+    [Parameter] public TQuery? InitialQuery { get; set; }
+    [Parameter] public SortQuery? InitialSortQuery { get; set; }
+
+    private string? _currentDisplay;
+    private bool _hasSelected;
+
+    protected override void OnParametersSet()
+    {
+        if (!_hasSelected)
+        {
+            _currentDisplay = DisplayText;
+        }
+    }
+
+    private async Task OpenPicker()
+    {
+        var parameters = new DialogParameters<AutoPicker<TItem, TQuery>>
+        {
+            { x => x.Client, Client },
+            { x => x.SortFields, SortFields },
+            { x => x.MultipleSelect, false },
+            {
+                x => x.InitialQuery, InitialQuery
+            },
+            {
+                x => x.InitialSortQuery, InitialSortQuery
+            }
+        };
+
+        var dialog = await DialogService.ShowAsync<AutoPicker<TItem, TQuery>>(
+            DialogTitle, parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: IReadOnlyList<TItem> selected } && selected.Count > 0)
+        {
+            var item = selected[0];
+            _currentDisplay = DisplayTextFunc?.Invoke(item) ?? item.ToString();
+            _hasSelected = true;
+            await OnSelected.InvokeAsync(item);
+        }
+    }
+
+    private async Task OnClear()
+    {
+        _currentDisplay = null;
+        _hasSelected = false;
+        await OnSelected.InvokeAsync(null);
+    }
+}

@@ -1,0 +1,72 @@
+@typeparam TDto where TDto : MasterDataDtoBase
+    @typeparam TSearch where TSearch : MasterDataSearchQueryBase, new()
+    @typeparam TCreateCommand where TCreateCommand : MasterDataCreateCommandBase, new()
+    @typeparam TUpdateCommand where TUpdateCommand : MasterDataUpdateCommandBase
+@using Alcedo.Frontend.Abstraction.Dto
+@using Alcedo.Frontend.Abstraction.SearchQuery
+@using Alcedo.Frontend.Abstraction.Command
+@using Alcedo.Frontend.Abstraction.BackednInterface
+@using Alcedo.Frontend.Blazor.Components.Auto
+@inject AlcedoRequestService RequestService
+@inject NavigationManager NavigationManager
+@inject AutoValidatorService Validator
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <MudToolBar Dense="true" Class="px-0 mb-4">
+        <MudLink StartIcon="@Icons.Material.Filled.ArrowBack"
+                 Color="Color.Secondary"
+                 Uncontrolled="true"
+                 Href="@BackHref"
+                 Class="d-flex align-center">
+            Back
+        </MudLink>
+        <MudText Typo="Typo.h6" Class="ml-4">@Title</MudText>
+        <MudSpacer/>
+        <MudButton Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Color="Color.Primary"
+                   OnClick="Save">
+            Save
+        </MudButton>
+    </MudToolBar>
+    <MudCard Outlined="true">
+        <MudCardContent>
+            <MudGrid>
+                <AutoForm Model="_effectiveCommand"/>
+                @ChildContent
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    [Parameter, EditorRequired] public IMasterDataController<TDto, TSearch, TCreateCommand, TUpdateCommand> Client { get; set; } = null!;
+    [Parameter, EditorRequired] public string BackHref { get; set; } = null!;
+    [Parameter, EditorRequired] public string AfterCreateHref { get; set; } = null!;
+    [Parameter] public string Title { get; set; } = "New";
+    [Parameter] public TCreateCommand? Command { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private TCreateCommand _internalCommand = new();
+    private TCreateCommand _effectiveCommand => Command ?? _internalCommand;
+
+    private async Task Save()
+    {
+        if (!await Validator.ValidateAsync(_effectiveCommand))
+        {
+            return;
+        }
+
+        var id = await RequestService.ExecuteAsync(
+            () => Client.CreateAsync(_effectiveCommand),
+            opt => opt.WithSuccessMsg());
+
+        if (id == Guid.Empty)
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo(AfterCreateHref.Replace("{id}", id.ToString()));
+    }
+
+}

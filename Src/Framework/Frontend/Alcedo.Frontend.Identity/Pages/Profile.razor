@@ -1,0 +1,210 @@
+@page "/identity/profile"
+@page "/profile"
+@using Alcedo.Frontend.Identity.Clients.Auth
+@using Alcedo.Frontend.Identity.Components
+@using Alcedo.Frontend.Identity.Providers
+@inject IAuthClient AuthClient
+@inject IJSRuntime JS
+@inject IDialogService DialogService
+@inject AuthStateProvider AuthProvider
+@inject AlcedoRequestService RequestService
+@inject NavigationManager NavigationManager
+
+@if (_isLoading)
+{
+    <MudProgressCircular Indeterminate="true" Class="d-flex mx-auto mt-16"/>
+}
+else if (_profile is null)
+{
+    <MudAlert Severity="Severity.Error" Class="ma-4">Failed to fetch profile</MudAlert>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-6">
+        <MudCard Outlined="true" Style="border-radius:1.5rem; overflow:hidden;">
+            <MudCardContent Class="pa-0">
+                <MudGrid Spacing="0">
+
+                    <MudItem xs="12" sm="4" Style="background:var(--mud-palette-primary);">
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pa-6"
+                                  Style="height:100%; color:var(--mud-palette-primary-text);">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                                <MudAvatar
+                                    Style="width:80px; height:80px; font-size:2rem; font-weight:900; background:rgba(255,255,255,0.2); color:var(--mud-palette-primary-text);">
+                                    @_profile.Name[0].ToString().ToUpper()
+                                </MudAvatar>
+                                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudText Typo="Typo.overline" Style="opacity:0.5; letter-spacing:0.3em;">Code
+                                    </MudText>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Style="font-family:monospace; font-weight:900; background:rgba(0,0,0,0.2); color:var(--mud-palette-primary-text);">
+                                        @_profile.Code
+                                    </MudChip>
+                                </MudStack>
+                            </MudStack>
+                            <MudStack AlignItems="AlignItems.Center" Spacing="0" Style="opacity:0.6;">
+                                <MudText Typo="Typo.caption">Validate to</MudText>
+                                <MudText Typo="Typo.caption">@_validUntil</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="8">
+                        <MudStack Justify="Justify.SpaceBetween" Class="pa-6" Style="height:100%;">
+                            <MudStack Spacing="4">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.h5"
+                                                 Style="font-weight:900; font-style:italic; text-transform:uppercase;">
+                                            @_profile.Name
+                                        </MudText>
+                                        <MudText Typo="Typo.caption">
+                                            @_profile.UserName
+                                        </MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Outlined.Shield" Style="opacity:0.1;"
+                                                 Size="Size.Large"/>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Logout"
+                                                       Color="Color.Error"
+                                                       Size="Size.Medium"
+                                                       OnClick="Logout"/>
+                                    </MudStack>
+                                </MudStack>
+
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="6">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption">Account</MudText>
+                                            <MudText Typo="Typo.body2"
+                                                     Style="font-weight:700;">@_profile.LoginName</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption">Email</MudText>
+                                            <MudText Typo="Typo.body2"
+                                                     Style="font-weight:700;">@(_profile.Email ?? "--")</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.caption">Contact</MudText>
+                                            <MudText Typo="Typo.body2"
+                                                     Style="font-weight:700;">@(_profile.Contact ?? "--")</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudStack>
+
+                            <MudDivider Class="my-2"/>
+
+                            <MudStack Row="true" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center">
+                                <MudStack Row="true" Spacing="2">
+                                    @if (_profile.UseTwoFactorAuthenticator)
+                                    {
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Filled.LockOpen"
+                                                   OnClick="DisableTwoFactor">
+                                            Disable MFA
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Success"
+                                                   Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Filled.EnhancedEncryption"
+                                                   OnClick="OpenTwoFactorDialog">
+                                            Enable MFA
+                                        </MudButton>
+                                    }
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               StartIcon="@Icons.Material.Filled.Lock"
+                                               OnClick="@OpenChangePasswordDialog">
+                                        Change Password
+                                    </MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+}
+
+@code {
+    private UserProfileDto? _profile;
+    private bool _isLoading = true;
+    private string _validUntil = "--";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _profile = await RequestService.ExecuteAsync(() => AuthClient.GetProfileAsync());
+            _validUntil = (await AuthProvider.GetTokenValidUntilAsync() ?? DateTimeOffset.MinValue).LocalDateTime.ToShortTimeString();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenChangePasswordDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var parameters = new DialogParameters { ["MustChange"] = false };
+        parameters.Add("OnSuccess", EventCallback.Factory.Create(this, AuthProvider.ClearAsync));
+        await DialogService.ShowAsync<ChangePasswordDialog>("Change Password", parameters, options);
+    }
+
+    private async Task OpenTwoFactorDialog()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            NoHeader = true
+        };
+
+        var dialog = await DialogService.ShowAsync<TwoFactorEnableDialog>(string.Empty, options);
+        await dialog.Result;
+        await RefreshProfileAsync();
+    }
+
+    private async Task DisableTwoFactor()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Disable Two-Factor Authentication",
+            "Disable two-factor authentication for your account?",
+            yesText: "Disable",
+            cancelText: "Cancel");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        await RequestService.ExecuteAsync(() => AuthClient.DisableTwoFactorAsync());
+        await RefreshProfileAsync();
+    }
+
+    private async Task RefreshProfileAsync()
+    {
+        _profile = await RequestService.ExecuteAsync(() => AuthClient.GetProfileAsync());
+        StateHasChanged();
+    }
+
+    private async Task Logout(MouseEventArgs arg)
+    {
+        await AuthProvider.ClearAsync();
+    }
+
+}
