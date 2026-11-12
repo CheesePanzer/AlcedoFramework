@@ -1,6 +1,4 @@
 using Alcedo.Core.Abstractions;
-using Alcedo.Framework.Admin.Presentation.Middlemare;
-using Microsoft.AspNetCore.Builder;
 
 namespace Alcedo.Framework.Admin;
 
@@ -12,14 +10,5 @@ public static class AlcedoModuleRegistryExtensions
     {
         registry.AddModule(new AlcedoAdminModule());
         return registry;
-    }
-}
-
-public static class AdminModuleExtensions
-{
-    public static IApplicationBuilder UseAlcedoAdminMiddlewares(this IApplicationBuilder app)
-    {
-        //app.UseMiddleware<AccessLogRecorderMiddleware>();
-        return app;
     }
 }

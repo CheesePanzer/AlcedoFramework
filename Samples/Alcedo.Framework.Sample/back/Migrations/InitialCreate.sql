@@ -8,16 +8,7 @@ START TRANSACTION;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
-        IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'alcedoadmin') THEN
-            CREATE SCHEMA alcedoadmin;
-        END IF;
-    END IF;
-END $EF$;
-
-DO $EF$
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'alcedoformulaengine') THEN
             CREATE SCHEMA alcedoformulaengine;
         END IF;
@@ -26,7 +17,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'alcedoidentity') THEN
             CREATE SCHEMA alcedoidentity;
         END IF;
@@ -35,7 +26,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'masstransit') THEN
             CREATE SCHEMA masstransit;
         END IF;
@@ -44,7 +35,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'juicestore') THEN
             CREATE SCHEMA juicestore;
         END IF;
@@ -53,7 +44,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'alcedoframework') THEN
             CREATE SCHEMA alcedoframework;
         END IF;
@@ -62,7 +53,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'alcedonotification') THEN
             CREATE SCHEMA alcedonotification;
         END IF;
@@ -71,7 +62,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
         IF NOT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname = 'quartz') THEN
             CREATE SCHEMA quartz;
         END IF;
@@ -80,37 +71,14 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE EXTENSION IF NOT EXISTS pg_trgm;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
-    CREATE TABLE alcedoadmin.access_log_entities (
-        id uuid NOT NULL,
-        trace_id character varying(512),
-        ip_address character varying(512) NOT NULL,
-        user_agent text,
-        method character varying(512) NOT NULL,
-        area character varying(512),
-        controller character varying(512) NOT NULL,
-        action character varying(512) NOT NULL,
-        url text NOT NULL,
-        requested_at timestamp with time zone NOT NULL,
-        status_code integer,
-        execution_ms integer,
-        exception text,
-        CONSTRAINT pk_access_log_entities PRIMARY KEY (id)
-    );
-    COMMENT ON TABLE alcedoadmin.access_log_entities IS 'access_log_entities';
-    END IF;
-END $EF$;
-
-DO $EF$
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.formula_agg_roots (
         id uuid NOT NULL,
         description text NOT NULL,
@@ -129,7 +97,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.formula_execution_log_entities (
         id uuid NOT NULL,
         fomula_code character varying(512) NOT NULL,
@@ -146,7 +114,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.history_formula_entities (
         id uuid NOT NULL,
         code character varying(512) NOT NULL,
@@ -160,7 +128,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.history_user_entities (
         id uuid NOT NULL,
         code character varying(512) NOT NULL,
@@ -183,7 +151,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE masstransit.inbox_state (
         id bigint GENERATED BY DEFAULT AS IDENTITY,
         message_id uuid NOT NULL,
@@ -204,7 +172,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE juicestore.juice_agg_roots (
         id uuid NOT NULL,
         description text NOT NULL,
@@ -234,7 +202,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.login_log_entities (
         id uuid NOT NULL,
         user_id uuid,
@@ -252,7 +220,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoframework.master_data_audit_log_entities (
         id uuid NOT NULL,
         aggregate_id uuid NOT NULL,
@@ -273,7 +241,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedonotification.message_config_agg_roots (
         id uuid NOT NULL,
         message_type_code character varying(512) NOT NULL,
@@ -298,7 +266,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedonotification.message_error_entities (
         id uuid NOT NULL,
         message_type_code character varying(512) NOT NULL,
@@ -318,7 +286,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedonotification.message_template_agg_roots (
         id uuid NOT NULL,
         channel integer NOT NULL,
@@ -345,7 +313,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE masstransit.outbox_state (
         outbox_id uuid NOT NULL,
         lock_id uuid NOT NULL,
@@ -360,7 +328,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_calendars (
         sched_name text NOT NULL,
         calendar_name text NOT NULL,
@@ -372,7 +340,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_fired_triggers (
         sched_name text NOT NULL,
         entry_id text NOT NULL,
@@ -394,7 +362,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_job_details (
         sched_name text NOT NULL,
         job_name text NOT NULL,
@@ -413,7 +381,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_locks (
         sched_name text NOT NULL,
         lock_name text NOT NULL,
@@ -424,7 +392,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_paused_trigger_grps (
         sched_name text NOT NULL,
         trigger_group text NOT NULL,
@@ -435,7 +403,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_scheduler_state (
         sched_name text NOT NULL,
         instance_name text NOT NULL,
@@ -448,7 +416,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.role_aggs (
         id uuid NOT NULL,
         description character varying(512),
@@ -472,7 +440,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE storage_gc (
         id bigint GENERATED BY DEFAULT AS IDENTITY,
         bucket character varying(512) NOT NULL,
@@ -487,7 +455,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.user_aggs (
         id uuid NOT NULL,
         login_name character varying(512) NOT NULL,
@@ -522,7 +490,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.formula_expression_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -539,7 +507,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.formula_input_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -557,7 +525,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.formula_output_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -574,7 +542,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.history_formula_expression_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -591,7 +559,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.history_formula_input_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -609,7 +577,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoformulaengine.history_formula_output_entities (
         id uuid NOT NULL,
         formula_id uuid NOT NULL,
@@ -626,7 +594,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedonotification.message_config_template_relations_entities (
         id uuid NOT NULL,
         message_config_id uuid NOT NULL,
@@ -641,7 +609,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE masstransit.outbox_message (
         sequence_number bigint GENERATED BY DEFAULT AS IDENTITY,
         enqueue_time timestamp with time zone,
@@ -673,7 +641,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_triggers (
         sched_name text NOT NULL,
         trigger_name text NOT NULL,
@@ -699,7 +667,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.role_permissions_relations (
         id uuid NOT NULL,
         role_id uuid NOT NULL,
@@ -713,7 +681,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE alcedoidentity.user_roles_relations (
         id uuid NOT NULL,
         user_id uuid NOT NULL,
@@ -728,7 +696,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_blob_triggers (
         sched_name text NOT NULL,
         trigger_name text NOT NULL,
@@ -742,7 +710,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_cron_triggers (
         sched_name text NOT NULL,
         trigger_name text NOT NULL,
@@ -757,7 +725,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_simple_triggers (
         sched_name text NOT NULL,
         trigger_name text NOT NULL,
@@ -773,7 +741,7 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE TABLE quartz.qrtz_simprop_triggers (
         sched_name text NOT NULL,
         trigger_name text NOT NULL,
@@ -798,331 +766,331 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_formula_agg_roots_code ON alcedoformulaengine.formula_agg_roots (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_formula_agg_roots_code_version ON alcedoformulaengine.formula_agg_roots (code, version);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_formula_expression_entities_formula_id_order ON alcedoformulaengine.formula_expression_entities (formula_id, "order");
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_formula_expression_entities_formula_id_var_name ON alcedoformulaengine.formula_expression_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_formula_input_entities_formula_id_var_name ON alcedoformulaengine.formula_input_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_formula_output_entities_formula_id_var_name ON alcedoformulaengine.formula_output_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_entities_code ON alcedoformulaengine.history_formula_entities (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_entities_code_original_version ON alcedoformulaengine.history_formula_entities (code, original_version);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_expression_entities_formula_id_order ON alcedoformulaengine.history_formula_expression_entities (formula_id, "order");
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_expression_entities_formula_id_var_name ON alcedoformulaengine.history_formula_expression_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_input_entities_formula_id_var_name ON alcedoformulaengine.history_formula_input_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_history_formula_output_entities_formula_id_var_name ON alcedoformulaengine.history_formula_output_entities (formula_id, var_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_inbox_state_delivered ON masstransit.inbox_state (delivered);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_juice_agg_roots_code ON juicestore.juice_agg_roots (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_juice_agg_roots_flavor ON juicestore.juice_agg_roots (flavor);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_juice_agg_roots_is_featured_sort_order ON juicestore.juice_agg_roots (is_featured, sort_order);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_master_data_audit_log_entities_aggregate_id_aggregate_ident ON alcedoframework.master_data_audit_log_entities (aggregate_id, aggregate_identity);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_message_config_agg_roots_code ON alcedonotification.message_config_agg_roots (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_message_config_agg_roots_message_type_code ON alcedonotification.message_config_agg_roots (message_type_code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_message_config_template_relations_entities_message_config_i ON alcedonotification.message_config_template_relations_entities (message_config_id, message_template_id);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_message_config_template_relations_entities_message_template ON alcedonotification.message_config_template_relations_entities (message_template_id);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_message_template_agg_roots_code ON alcedonotification.message_template_agg_roots (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_outbox_message_enqueue_time ON masstransit.outbox_message (enqueue_time);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_outbox_message_expiration_time ON masstransit.outbox_message (expiration_time);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_outbox_message_inbox_message_id_inbox_consumer_id_sequence_ ON masstransit.outbox_message (inbox_message_id, inbox_consumer_id, sequence_number);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_outbox_message_outbox_id_sequence_number ON masstransit.outbox_message (outbox_id, sequence_number);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_outbox_state_created ON masstransit.outbox_state (created);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_job_group ON quartz.qrtz_fired_triggers (job_group);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_job_name ON quartz.qrtz_fired_triggers (job_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_job_req_recovery ON quartz.qrtz_fired_triggers (requests_recovery);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_trig_group ON quartz.qrtz_fired_triggers (trigger_group);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_trig_inst_name ON quartz.qrtz_fired_triggers (instance_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_trig_name ON quartz.qrtz_fired_triggers (trigger_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_ft_trig_nm_gp ON quartz.qrtz_fired_triggers (sched_name, trigger_name, trigger_group);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_j_req_recovery ON quartz.qrtz_job_details (requests_recovery);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_t_next_fire_time ON quartz.qrtz_triggers (next_fire_time);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_t_nft_st ON quartz.qrtz_triggers (next_fire_time, trigger_state);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX idx_qrtz_t_state ON quartz.qrtz_triggers (trigger_state);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_qrtz_triggers_sched_name_job_name_job_group ON quartz.qrtz_triggers (sched_name, job_name, job_group);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_role_aggs_code ON alcedoidentity.role_aggs (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_role_permissions_relations_role_id_permission_endpoint ON alcedoidentity.role_permissions_relations (role_id, permission_endpoint);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_user_aggs_code ON alcedoidentity.user_aggs (code);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_user_aggs_login_name ON alcedoidentity.user_aggs (login_name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX "IX_UserAgg_Root_OnlyOne" ON alcedoidentity.user_aggs (is_root_user) WHERE is_root_user = true;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE INDEX ix_user_roles_relations_role_id ON alcedoidentity.user_roles_relations (role_id);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     CREATE UNIQUE INDEX ix_user_roles_relations_user_id_role_id ON alcedoidentity.user_roles_relations (user_id, role_id);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112103840_InitialCreate') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "migration_id" = '20261112112735_InitialCreate') THEN
     INSERT INTO "__EFMigrationsHistory" (migration_id, product_version)
-    VALUES ('20261112103840_InitialCreate', '10.0.8');
+    VALUES ('20261112112735_InitialCreate', '10.0.8');
     END IF;
 END $EF$;
 COMMIT;

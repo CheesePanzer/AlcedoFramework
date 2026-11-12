@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Alcedo.Framework.Sample.Migrations
 {
     [DbContext(typeof(AlcedoDbContext))]
-    [Migration("20261112103840_InitialCreate")]
+    [Migration("20261112112735_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -64,83 +64,6 @@ namespace Alcedo.Framework.Sample.Migrations
                         .HasName("pk_storage_gc");
 
                     b.ToTable("storage_gc", (string)null);
-                });
-
-            modelBuilder.Entity("Alcedo.Framework.Admin.Domain.Entity.AccessLogEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("action");
-
-                    b.Property<string>("Area")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("area");
-
-                    b.Property<string>("Controller")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("controller");
-
-                    b.Property<string>("Exception")
-                        .HasMaxLength(512)
-                        .HasColumnType("text")
-                        .HasColumnName("exception");
-
-                    b.Property<int?>("ExecutionMs")
-                        .HasColumnType("integer")
-                        .HasColumnName("execution_ms");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("ip_address");
-
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("method");
-
-                    b.Property<DateTimeOffset>("RequestedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("requested_at");
-
-                    b.Property<int?>("StatusCode")
-                        .HasColumnType("integer")
-                        .HasColumnName("status_code");
-
-                    b.Property<string>("TraceId")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("trace_id");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("text")
-                        .HasColumnName("url");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(512)
-                        .HasColumnType("text")
-                        .HasColumnName("user_agent");
-
-                    b.HasKey("Id")
-                        .HasName("pk_access_log_entities");
-
-                    b.ToTable("access_log_entities", "alcedoadmin", t =>
-                        {
-                            t.HasComment("access_log_entities");
-                        });
                 });
 
             modelBuilder.Entity("Alcedo.Framework.FormulaEngine.Domain.FormulaAggRoot", b =>

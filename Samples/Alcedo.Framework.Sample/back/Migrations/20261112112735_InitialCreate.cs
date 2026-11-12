@@ -13,9 +13,6 @@ namespace Alcedo.Framework.Sample.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "alcedoadmin");
-
-            migrationBuilder.EnsureSchema(
                 name: "alcedoformulaengine");
 
             migrationBuilder.EnsureSchema(
@@ -38,31 +35,6 @@ namespace Alcedo.Framework.Sample.Migrations
 
             migrationBuilder.AlterDatabase()
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
-
-            migrationBuilder.CreateTable(
-                name: "access_log_entities",
-                schema: "alcedoadmin",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    trace_id = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    ip_address = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    user_agent = table.Column<string>(type: "text", maxLength: 512, nullable: true),
-                    method = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    area = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    controller = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    action = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    url = table.Column<string>(type: "text", maxLength: 512, nullable: false),
-                    requested_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    status_code = table.Column<int>(type: "integer", nullable: true),
-                    execution_ms = table.Column<int>(type: "integer", nullable: true),
-                    exception = table.Column<string>(type: "text", maxLength: 512, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_access_log_entities", x => x.id);
-                },
-                comment: "access_log_entities");
 
             migrationBuilder.CreateTable(
                 name: "formula_agg_roots",
@@ -1237,10 +1209,6 @@ namespace Alcedo.Framework.Sample.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "access_log_entities",
-                schema: "alcedoadmin");
-
             migrationBuilder.DropTable(
                 name: "formula_execution_log_entities",
                 schema: "alcedoformulaengine");

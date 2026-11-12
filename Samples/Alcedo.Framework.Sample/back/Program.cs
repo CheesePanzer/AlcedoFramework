@@ -36,7 +36,6 @@ var app = builder.Build();
 app.UseAlcedoCoreOnStartUp();
 
 app.UseAlcedoCoreMiddlewares()
-    .UseAlcedoAdminMiddlewares()
     .UseAlcedoIdentityMiddlewares();
 
 app.MapAlcedoCoreControllers();

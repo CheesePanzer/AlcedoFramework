@@ -62,7 +62,7 @@ Alcedo.Frontend is the Blazor WebAssembly SPA layer of the Alcedo modular monoli
 | Module | Backend Counterpart | What It Provides |
 |---|---|---|
 | **Identity** | `Alcedo.Framework.Identity` | Login/logout, TOTP 2FA, user/role/permission CRUD, profile, token refresh |
-| **Admin** | Framework-level admin tools | Access log viewer, Quartz job manager |
+| **Admin** | Framework-level admin tools | Quartz job manager |
 | **Notification** | `Alcedo.Framework.Notification` | Message template CRUD, message config management |
 | **FormulaEngine** | `Alcedo.Framework.FormulaEngine` | Formula listing, detail, and test execution |
 

@@ -236,7 +236,6 @@ var app = builder.Build();
 app.UseAlcedoCoreOnStartUp();
 
 app.UseAlcedoCoreMiddlewares()
-    .UseAlcedoAdminMiddlewares()
     .UseAlcedoIdentityMiddlewares();
 
 app.MapAlcedoCoreControllers();
@@ -246,4 +245,4 @@ app.SeedAlcedoIdentity();
 app.Run();
 ```
 
-**Key rule:** `AddCore()` before `AddModules()`, so module services can depend on Core abstractions. Module middleware (auth, access logging) is added after `Build()` but before controller mapping.
+**Key rule:** `AddCore()` before `AddModules()`, so module services can depend on Core abstractions. Module middleware such as authentication and authorization is added after `Build()` but before controller mapping.
