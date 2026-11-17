@@ -23,8 +23,11 @@ public sealed class AlcedoErrorExceptionHandler : IExceptionHandler
         var pd = AlcedoProblemDetailsFactory.Create(httpContext, exception);
 
         httpContext.Response.StatusCode = pd.Status ?? 500;
-        httpContext.Response.ContentType = "application/problem+json";
-        await httpContext.Response.WriteAsJsonAsync(pd, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            pd,
+            options: null,
+            contentType: "application/problem+json",
+            cancellationToken: cancellationToken);
 
         return true;
     }
