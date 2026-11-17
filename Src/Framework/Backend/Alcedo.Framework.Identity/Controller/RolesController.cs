@@ -41,7 +41,7 @@ public sealed class
     public async Task<IActionResult> DeletePerms(Guid id, [FromBody] IReadOnlyCollection<string> permKeys,
         CancellationToken cancellationToken = default)
     {
-        await _service.BatchDeletePermsForRoleAsync(id, permKeys, CurrentUser, cancellationToken);
+        await _service.BatchDeletePermsForRoleAsync(id, permKeys, CurrentUser.Id, cancellationToken);
         return Ok();
     }
 
@@ -49,7 +49,7 @@ public sealed class
     [Operation("ClearPermissions", "Batch Clear Permissions Of Role")]
     public async Task<IActionResult> ClearPerms(Guid id, CancellationToken cancellationToken = default)
     {
-        await _service.ClearPermsForRoleAsync(id, CurrentUser, cancellationToken);
+        await _service.ClearPermsForRoleAsync(id, CurrentUser.Id, cancellationToken);
         return Ok();
     }
 

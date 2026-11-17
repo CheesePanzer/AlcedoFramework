@@ -30,10 +30,10 @@ public interface IRoleApplicationService : IMasterDataApplicationService<RoleDto
     Task BatchAssignPermsToRoleAsync(Guid roleId, IReadOnlyCollection<string> permKeys, Guid operId,
         CancellationToken ct = default);
 
-    Task BatchDeletePermsForRoleAsync(Guid roleId, IReadOnlyCollection<string> permKeys, ContextOper oper,
+    Task BatchDeletePermsForRoleAsync(Guid roleId, IReadOnlyCollection<string> permKeys, Guid operId,
         CancellationToken ct = default);
 
-    Task ClearPermsForRoleAsync(Guid roleId, ContextOper oper, CancellationToken ct = default);
+    Task ClearPermsForRoleAsync(Guid roleId, Guid operId, CancellationToken ct = default);
 
     Task RefreshRoleCacheByIdAsync(Guid roleId, CancellationToken ct = default);
 
@@ -117,6 +117,20 @@ internal sealed class RoleApplicationService
         CancellationToken ct = default)
         => _log.GetPagedDtosAsync(query, sortQuery, pagiQuery, ct);
 
+    private async Task<bool> CheckIfUserPossessesPermsAsync(IReadOnlyCollection<string> permKeys, OperatorDtoWithRoles oper, CancellationToken ct)
+    {
+        var role = await _roleRepository.GetListStrictByIdsNoTrackingAsync(oper.RoleIds, ct);
+        var hasPermKeys = role
+            .SelectMany(r => r.AllowedEndpoints)
+            .ToHashSet();
+
+        var notHavingPermKeys = permKeys
+            .Where(k => !hasPermKeys.Contains(k))
+            .ToList();
+
+        return notHavingPermKeys.Count > 0;
+    }
+
     /// <summary>
     /// 给角色批量添加权限
     /// </summary>
@@ -132,21 +146,9 @@ internal sealed class RoleApplicationService
     {
         var oper = await _operatorService.GetCurrentOperatorWithRolesAsync(operId, ct);
 
-        if (!oper.IsRootUser)
+        if (!oper.IsRootUser && await CheckIfUserPossessesPermsAsync(permKeys, oper, ct))
         {
-            var role = await _roleRepository.GetListStrictByIdsNoTrackingAsync(oper.RoleIds, ct);
-            var hasPermKeys = role
-                .SelectMany(r => r.AllowedEndpoints)
-                .ToHashSet();
-
-            var notHavingPermKeys = permKeys
-                .Where(k => !hasPermKeys.Contains(k))
-                .ToList();
-
-            if (notHavingPermKeys.Count > 0)
-            {
-                throw new IdentityErrNotPermittedPartially("You can't assign permissions that you don't have.");
-            }
+           throw new IdentityErrNotPermittedPartially("You can't assign permissions that you don't have.");
         }
 
         await _executor.ExecuteAsync(
@@ -163,15 +165,22 @@ internal sealed class RoleApplicationService
     /// <param name="ct"></param>
     /// <exception cref="BErrorInvalidUser"></exception>
     /// <exception cref="BErrorAggNotFound{RoleAggregate}"></exception>
-    public async Task BatchDeletePermsForRoleAsync(Guid roleId, IReadOnlyCollection<string> permKeys, ContextOper oper,
+    public async Task BatchDeletePermsForRoleAsync(Guid roleId, IReadOnlyCollection<string> permKeys, Guid operId,
         CancellationToken ct = default)
     {
+        var oper = await _operatorService.GetCurrentOperatorWithRolesAsync(operId, ct);
+
+        if (!oper.IsRootUser && await CheckIfUserPossessesPermsAsync(permKeys, oper, ct))
+        {
+            throw new IdentityErrNotPermittedPartially("You can't delete permissions that you don't have.");
+        }
+
         await _executor.ExecuteAsync(async () =>
         {
             var role = await _roleRepository.GetByIdForUpdateAsync(roleId, ct) ??
                        throw new DomErrResourceNotFound<RoleAgg>(roleId);
 
-            role.BatchDeletePermissions(permKeys, OperatorRecord.From(oper));
+            role.BatchDeletePermissions(permKeys, new OperatorRecord(oper.Id, oper.Code, oper.Name));
         }, ct);
     }
 
@@ -183,14 +192,24 @@ internal sealed class RoleApplicationService
     /// <param name="ct"></param>
     /// <exception cref="BErrorInvalidUser"></exception>
     /// <exception cref="BErrorAggNotFound{RoleAggregate}"></exception>
-    public async Task ClearPermsForRoleAsync(Guid roleId, ContextOper oper, CancellationToken ct = default)
+    public async Task ClearPermsForRoleAsync(Guid roleId, Guid operId, CancellationToken ct = default)
     {
+        var oper = await _operatorService.GetCurrentOperatorWithRolesAsync(operId, ct);
+
+        
+
         await _executor.ExecuteAsync(async () =>
         {
             var role = await _roleRepository.GetByIdForUpdateAsync(roleId, ct) ??
                        throw new DomErrResourceNotFound<RoleAgg>(roleId);
 
-            role.ClearPermissions(OperatorRecord.From(oper));
+            if (!oper.IsRootUser && await CheckIfUserPossessesPermsAsync(
+                role.RolePermissions.Select(p => p.PermissionEndpoint).ToList(), oper, ct))
+            {
+                throw new IdentityErrNotPermittedPartially("You can't delete permissions that you don't have.");
+            }
+
+            role.ClearPermissions(new OperatorRecord(oper.Id, oper.Code, oper.Name));
         }, ct);
     }
 
