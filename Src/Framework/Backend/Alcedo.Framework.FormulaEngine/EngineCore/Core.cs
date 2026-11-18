@@ -29,7 +29,7 @@ internal static class EngineInputFlatter
 
             if (entity.ValidCondition is not null)
             {
-                var condExpr = new AsyncExpression(entity.ValidCondition, ExpressionOptions.AllowNullParameter);
+                var condExpr = new Expression(entity.ValidCondition, ExpressionOptions.AllowNullParameter);
                 foreach (var (k, v) in parameters)
                 {
                     condExpr.Parameters[k] = v!;
@@ -165,7 +165,7 @@ where TInput : class
 
         foreach (var formula in _expressionsSorted)
         {
-            var expr = new AsyncExpression(formula.Expression, ExpressionOptions.AllowNullParameter);
+            var expr = new Expression(formula.Expression, ExpressionOptions.AllowNullParameter);
 
             foreach (var obj in context)
             {
@@ -186,7 +186,7 @@ where TInput : class
         
         foreach (var outputParam in _outputParameters)
         {
-            var expr = new AsyncExpression(outputParam.Expression, ExpressionOptions.AllowNullParameter);
+            var expr = new Expression(outputParam.Expression, ExpressionOptions.AllowNullParameter);
             
             foreach (var obj in context)
             {
