@@ -1,9 +1,27 @@
 <Project>
   <PropertyGroup>
     <Authors>CheesePanzer</Authors>
+    <Company>CheesePanzer</Company>
+    <Copyright>Copyright (c) CheesePanzer</Copyright>
+    <Description>$(MSBuildProjectName) is part of the modular Alcedo Framework for .NET.</Description>
+    <PackageProjectUrl>https://github.com/CheesePanzer/AlcedoFramework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CheesePanzer/AlcedoFramework.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>alcedo;dotnet;framework;modular</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IsPackable>false</IsPackable>
     <MinVerTagPrefix>v</MinVerTagPrefix>
-    <MinVerDefaultVersion>0.1.0-alpha.0</MinVerDefaultVersion>
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MinVer" Version="7.0.0" PrivateAssets="All" />
