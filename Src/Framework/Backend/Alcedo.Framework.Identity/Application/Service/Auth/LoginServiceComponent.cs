@@ -279,16 +279,26 @@ internal sealed class LoginServiceComponent
         var decision = _throttleDecisionFactory.Evaluate(count);
         if (decision.Kind == LoginThrottleKind.PermanentLock)
         {
-            await _executor.ExecuteAsync(async () =>
+            var userId = await _executor.ExecuteAsync(async () =>
             {
                 var user = await _userRepository.GetEnabledByLoginNameForUpdateAsync(loginName, ct);
                 if (user is null)
                 {
-                    return;
+                    return (Guid?)null;
                 }
 
                 user.Lock(new OperatorRecord(SystemUser.Id, SystemUser.Code, SystemUser.Name));
+
+                user.LogOut();
+
+                return user.Id;
             }, ct);
+
+            if (userId is not null)
+            {
+                await ClearUserSessionAsync(userId.Value);
+            }
+            
             _logger.LogWarning(
                 "Account {LoginName} permanently locked after {Count} failed attempts from IP {Ip}",
                 loginName, count, ip);
