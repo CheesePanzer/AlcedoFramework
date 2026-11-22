@@ -1,277 +1,202 @@
 # Alcedo.Framework.Identity
 
-This module provides **authentication, authorization, and session management** for the Alcedo platform. It is built on top of `Alcedo.Core` and `Alcedo.Framework.Shared`, using Redis for session state and JWT Bearer tokens for API authentication.
-
-The module follows a layered architecture:
-
-| Layer | Responsibility |
-|-------|----------------|
-| **Presentation** | `AuthSessionMiddleware`, `AlcedoRbacHandler`, endpoint-permission filters |
-| **Controller** | `AuthController`, `UserController`, cookie/response wrappers |
-| **Application** | `LoginServiceComponent`, `AuthApplicationService`, DTOs, commands |
-| **Domain** | `UserAgg`, `RoleAgg`, `PermEntity`, `HistoryUserEntity`, domain events |
-| **Infrastructure** | Redis stores, EF repositories, seeders, `PasswordHasher`, `JwtProvider` |
+Identity provides **JWT authentication, server-side session validation, and endpoint-level RBAC**. JWTs carry user/session identifiers; PostgreSQL stores users and roles, while Redis supports session/cache lookup and refresh-token mappings. Use the Contracts project for cross-module identity queries rather than coupling a business module to Identity repositories.
 
 ---
 
 ## Table of Contents
 
-- [Authentication Flow](#authentication-flow)
-  - [Password Login](#password-login)
-  - [TOTP Verification](#totp-verification)
-  - [Token Refresh](#token-refresh)
-  - [Logout](#logout)
-- [Session Validation Pipeline](#session-validation-pipeline)
-- [RBAC Authorization](#rbac-authorization)
-  - [AuthSessionMiddleware](#authsessionmiddleware)
-  - [AlcedoRbacHandler](#alcedorbachandler)
-- [RBAC Endpoint Scanning](#rbac-endpoint-scanning)
-  - [Resource & Operation Attributes](#resource--operation-attributes)
-  - [EndpointPermissionCenter](#endpointpermissioncenter)
-  - [PermissionSeeder](#permissionseeder)
-- [Key Data Structures](#key-data-structures)
+- [Registration and Configuration](#registration-and-configuration)
+- [Bootstrap and First Login](#bootstrap-and-first-login)
+- [Password and TOTP Login](#password-and-totp-login)
+- [Authenticated Requests and Refresh](#authenticated-requests-and-refresh)
+- [Users Roles and Permissions](#users-roles-and-permissions)
+- [Protect a Business API](#protect-a-business-api)
+- [Profile and Account Operations](#profile-and-account-operations)
+- [Troubleshooting and Further Reading](#troubleshooting-and-further-reading)
 
 ---
 
-## Authentication Flow
+## Registration and Configuration
 
-All authentication endpoints are exposed through `AuthController` (area: `identity`). The controller itself is thin; orchestration is delegated to `AuthApplicationService` and `LoginServiceComponent`.
+Register `.AddAlcedoFrameworkBase().AddAlcedoIdentity()` in the module registry and call `UseAlcedoIdentityMiddlewares()` after the Core middleware setup. This adds authentication, session validation, and authorization in that order. See the [complete host skeleton](00-Alcedo.Framework-Overview.md#register-the-host).
 
-### Password Login
+The Identity-specific configuration sections are:
 
-**Endpoint**: `POST /api/v1/identity/login`
-
-**Flow**:
-
-1. **Controller** receives `AuthCommand` (loginName + password).
-2. `AuthApplicationService.LoginAsync` delegates to `LoginServiceComponent.LoginAsync`.
-3. `InternalVerifyCredentialsAsync` fetches the user by login name:
-   - If user not found or disabled → returns failure (goes through throttle logic to prevent username enumeration).
-   - If password mismatch → returns failure (throttle counter incremented).
-   - If password correct → proceeds.
-4. `ProcessLoginFailureAsync` evaluates the throttle counter. If it exceeds the permanent-lock threshold, the account is locked.
-5. On success, `PrepareUserSessionAsync` generates a new `CurrentSession` GUID under a DB transaction.
-6. `FinalizeLoginOnSuccess` creates:
-   - A **JWT access token** (expires in `AccessTokenValidMinutes`).
-   - A **refresh token** stored in Redis (expires in `RefreshTokenValidMinutes`).
-   - A `UserCacheDto` written to Redis.
-7. The refresh token is returned to the client via `IRefreshTokenCookieProvider.Set` (HttpOnly, Secure, SameSite=Strict).
-
-**TOTP branch**: If `user.UseTwoFactorAuthenticator == true`, the password phase returns an empty `AccessToken` and a `PendingToken`. The actual JWT is deferred until TOTP verification.
-
-### TOTP Verification
-
-**Endpoint**: `POST /api/v1/identity/twofactor`
-
-**Flow**:
-
-1. **Controller** receives `TotpCommand` (pendingToken + totpCode).
-2. `VerifyTotpAsync` retrieves the pending `LoginContextData` from Redis by `pendingToken`.
-3. Validates the user still exists and `CanAccessContext`.
-4. Verifies the TOTP code against `user.TwoFactorSecret`.
-5. On success, completes the login (same `FinalizeLoginOnSuccess` path), deletes the pending context, and returns the JWT + refresh token.
-
-### Token Refresh
-
-**Endpoint**: `POST /api/v1/identity/jwt:refresh`
-
-**Flow**:
-
-1. **Controller** reads the refresh token from the cookie via `IRefreshTokenCookieProvider.Get`.
-2. `RefreshJwtAsync` validates the refresh token in Redis (`RefreshTokenStore.ValidateTokenAsync`).
-3. Validates the user's cached session is still active (`CurrentSession` not null).
-4. **Rotates** the refresh token atomically (old token deleted, new token written with remaining TTL).
-5. Generates a new JWT signed with the current session.
-6. Returns the new access token; the new refresh token is set in the cookie.
-
-> **Note**: Token rotation is protected by a distributed lock (`ApplicationLockProvider`) scoped to the user, preventing race conditions during concurrent refresh attempts.
-
-### Logout
-
-**Endpoint**: `PUT /api/v1/identity/logout`
-
-**Flow**:
-
-1. `LogoutAsync` executes a DB transaction to call `user.LogOut()`, which invalidates `CurrentSession`.
-2. Clears Redis state: deletes the refresh token mapping and user cache.
-3. Deletes the refresh token cookie.
-
----
-
-## Session Validation Pipeline
-
-Every authenticated request passes through two gates:
-
-### 1. AuthSessionMiddleware
-
-Runs **before** MVC authorization. Validates:
-
-- Request is authenticated (`context.User.Identity.IsAuthenticated`).
-- JWT carries `NameIdentifier` (userId) and `currentSession` claims.
-- `userId` is a valid GUID.
-- User cache exists in Redis.
-- `cachedUser.CanAccessContext == true`.
-- `cachedUser.CurrentSession` matches the JWT's `currentSession` claim.
-
-If any check fails, the middleware either challenges (401) or throws `IdentityErrSessionInvalid`.
-
-On success, the `UserCacheDto` is attached to `HttpContext.Items[HttpContextUserStoreKey.Key]` so downstream handlers do not re-fetch it from Redis.
-
-### 2. AlcedoRbacHandler
-
-Runs **after** `AuthSessionMiddleware`, as part of ASP.NET Core's authorization pipeline. It enforces **endpoint-level permissions**.
-
----
-
-## RBAC Authorization
-
-### AuthSessionMiddleware
-
-```
-Request → AuthSessionMiddleware
-    ├── AllowAnonymous endpoint? → skip
-    ├── Not authenticated? → 401 Challenge
-    ├── Missing/invalid claims? → 401 Challenge
-    ├── User locked? → 401 IdentityErrInvalidUser
-    ├── Session mismatch? → 401 IdentityErrSessionInvalid
-    └── OK → attach UserCacheDto to HttpContext.Items
-```
-
-### AlcedoRbacHandler
-
-```
-Request → AuthSessionMiddleware (passed)
-    → AlcedoRbacHandler
-        ├── AllowAnonymous or SkipPermissionCheck? → Succeed
-        ├── Read UserCacheDto from HttpContext.Items (or fallback to Redis)
-        ├── User locked? → 401
-        ├── Root user? → Succeed
-        ├── Resolve endpoint key from Controller+Action
-        ├── Check role cache: any role allows this endpoint?
-        │   └── No? → 403 IdentityErrNotPermitted
-        └── Yes? → Succeed
-```
-
-**Endpoint key resolution**:
-
-```
-{area}.{resource}.{operation}
-```
-
-- `area`: from `[Area("...")]` on controller or action.
-- `resource`: from `[Resource("Code", "Description")]` on controller.
-- `operation`: from `[Operation("Code", "Description")]` on action.
-
-If no `Area` is defined, the key format collapses to `{resource}.{operation}`.
-
-**Role cache check**: `IRoleCacheProvider.CheckPermissionByRoleIdsAsync` iterates the user's `RoleIds`, fetches each `RoleCacheDto` from Redis, and checks if `AllowedEndpoints` contains the resolved key (ordinal-ignore-case).
-
----
-
-## RBAC Endpoint Scanning
-
-Permissions are not hard-coded. They are **discovered automatically** from controller/action metadata at startup and synchronized to the database.
-
-### Resource & Operation Attributes
-
-Every controller and action must declare these attributes:
-
-```csharp
-[Area("identity")]
-[Resource("Auth", "Authorization")]
-public sealed class AuthController : AlcedoApiAreaControllerBase
+```json
 {
-    [HttpPost("login")]
-    [AllowAnonymous]
-    [Operation("Login")]
-    public async Task<ActionResult<AuthTokenPasswordPhaseResult>> Login(...) { }
-
-    [HttpPost("twofactor")]
-    [AllowAnonymous]
-    [Operation("TotpLogin", "Enter Totp Code")]
-    public async Task<ActionResult<AuthTokenTotpPhaseResult>> TotpLogin(...) { }
+  "JwtOptions": {
+    "Issuer": "Alcedo",
+    "Audience": "AlcedoUser",
+    "Algorithm": "HS256",
+    "Key": "REPLACE_WITH_A_PRIVATE_SIGNING_KEY"
+  },
+  "SecurityOptions": {
+    "LoginFailedTTLSeconds": 60,
+    "AccountLockThresholdCount": 5,
+    "LoginContextValiditySeconds": 180,
+    "AccessTokenValidMinutes": 15,
+    "RefreshTokenValidMinutes": 480,
+    "CookieSecureOnly": true
+  },
+  "TotpOptions": { "Issuer": "Alcedo" },
+  "RbacSchemeOptions": { "RoleCacheExpiryMinutes": 120 },
+  "AlcedoColumnEncryptorOptions": {
+    "Key": "REPLACE_WITH_A_BASE64_ENCODED_32_BYTE_AES_KEY"
+  }
 }
 ```
 
-- **`[Resource]`** (class-level): Groups endpoints under a business resource. Code is used in the permission key; Description is used in UI/admin panels.
-- **`[Operation]`** (method-level): Identifies a specific action on the resource. Code is used in the permission key; Description provides human-readable context.
-- **`[SkipPermissionCheck]`**: Marks an endpoint as exempt from RBAC (still requires authentication via `AuthSessionMiddleware`).
-- **`[AllowAnonymous]`**: Marks an endpoint as fully public (bypasses both session and RBAC checks).
+These are configuration shapes, not usable secrets. Store real values outside committed configuration. The JWT implementation uses `Encoding.UTF8.GetBytes(JwtOptions.Key)`; it does not Base64-decode that string. Column encryption does Base64-decode its key. Treat the two keys as distinct configuration values.
 
-### EndpointPermissionCenter
-
-A singleton service that scans all loaded assemblies at startup and builds an in-memory cache of endpoint keys.
-
-**Key construction**:
-
-```csharp
-var key = string.IsNullOrWhiteSpace(area)
-    ? $"{resource}.{operation}"
-    : $"{area}.{resource}.{operation}";
-```
-
-Stored as lowercase in a `ConcurrentDictionary<(Type, MethodInfo), string>`.
-
-At runtime, `AlcedoRbacHandler` resolves the current request's `ControllerActionDescriptor` and looks up the key via `_center.GetKey(controllerType, methodInfo)`.
-
-### PermissionSeeder
-
-Runs at application startup (typically in the Host layer). It:
-
-1. Scans all controller types using the same reflection logic as `EndpointPermissionCenter`.
-2. Extracts `PermEntity` records from `[Resource]` + `[Operation]` metadata.
-3. **Syncs to database**:
-   - **New** permissions → `INSERT`
-   - **Existing** permissions → `UPDATE` description
-   - **Removed** permissions (no longer present in code) → `DELETE` cascaded to `RolePermissionsRelation`
-
-This ensures the permission table always matches the actual API surface. There is no manual permission registration.
+PostgreSQL/Redis, message transport, migrations, and Core settings are also required. For the browser client, configure the correct allowed CORS origin and credential handling. The refresh cookie is HttpOnly, uses **SameSite=Lax**, and uses `Secure=CookieSecureOnly`; it is not a token exposed through an `X-Refresh-Token` request header.
 
 ---
 
-## Key Data Structures
+## Bootstrap and First Login
 
-### Redis Key Space
+After applying the schema, `app.SeedAlcedoIdentity()` creates a root user if none exists. The supplied development seeder uses `admin` / `admin`, enables the account, and sets `RequiresPasswordChange`.
 
-| Store | Key Pattern | Value |
-|-------|-------------|-------|
-| `RefreshTokenStore` | `User:{userId}` | SHA256 hash of current refresh token |
-| `RefreshTokenStore` | `Token:{hash}` | `userId` |
-| `UserCacheStore` | `Cache:{userId}` | Serialized `UserCacheDto` |
-| `RoleCacheStore` | `Cache:{roleId}` | Serialized `RoleCacheDto` |
-| `LoginThrottleStore` | `Throttle:{loginName}` | Failure count |
-| `LoginContextStore` | `LoginContext:{pendingToken}` | Serialized `LoginContextData` |
+Change the seeded password before exposing the system. The login response's `RequirePasswordReset` flag tells clients to show the change-password workflow. The current implementation does not issue a restricted first-login JWT, so that flag is not a server-enforced prohibition on all other business API calls.
 
-### UserCacheDto (Redis)
+The root user bypasses role endpoint checks. Use it to set up roles and ordinary users, then test permissions using an ordinary account rather than assuming a successful root request proves the role configuration works.
+
+---
+
+## Password and TOTP Login
+
+All Auth routes include the controller segment **`/auth`**:
+
+```http
+POST /api/v1/identity/auth/login
+Content-Type: application/json
+X-Idempotency-Key: a-new-unique-request-key
+
+{"loginName":"admin","password":"YOUR_CURRENT_PASSWORD"}
+```
+
+Use a new idempotency key for a new POST attempt. Reusing one can produce a duplicate-request error before the login action is evaluated.
+
+For a password-only login, the response contains `accessToken`, `useTotp=false`, `pendingToken=null`, `requirePasswordReset`, and `validUntil`. The refresh token is written into the `X-Refresh-Token` cookie. **`ValidUntil` describes the refresh/session window**, not the access token's JWT `exp` time; access lifetime is controlled separately by `AccessTokenValidMinutes`.
+
+If TOTP is enabled, the password phase returns `useTotp=true` and a `pendingToken`, without an access token. Complete the flow with:
+
+```http
+POST /api/v1/identity/auth/twofactor
+Content-Type: application/json
+X-Idempotency-Key: another-new-unique-request-key
+
+{"pendingToken":"PENDING_TOKEN_FROM_LOGIN","totpCode":"123456"}
+```
+
+On success, store the returned access token and retain the response cookie. Pending contexts expire after `LoginContextValiditySeconds`; an invalid TOTP attempt deletes that context, so start again with password login when necessary.
+
+Failed password/TOTP checks increment a Redis counter scoped to the login name. At the configured threshold, the enabled account is locked in the domain. The counter's TTL is not the same as automatically unlocking the persisted account; unlocking is an administrative action.
+
+---
+
+## Authenticated Requests and Refresh
+
+Send the access token as:
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+```
+
+`AuthSessionMiddleware` validates the user and checks that the JWT's `currentSession` matches `UserCacheDto.CurrentSession`. A cryptographically valid token can therefore still be rejected after logout, password reset, or another login replaces its session.
+
+The RBAC handler then checks account eligibility, root status, and role permissions. `SkipPermissionCheck` bypasses the endpoint permission check, not JWT authentication or normal session validation.
+
+Refresh uses the HttpOnly cookie:
+
+```http
+POST /api/v1/identity/auth/jwt:refresh
+X-Idempotency-Key: a-new-refresh-request-key
+Cookie: X-Refresh-Token=REFRESH_TOKEN
+```
+
+The operation returns a new access token and writes a replacement refresh cookie. Preserve cookies between requests; a browser client needs credentialed requests with a compatible origin/scheme setup. Serialize refresh attempts per session. The application uses a user-scoped exclusive lock around rotation, but the underlying Redis store performs multiple operations, not one atomic Lua transaction.
+
+Logout is `PUT /api/v1/identity/auth/logout`. It reads/deletes the refresh cookie and invalidates the corresponding server session. The client should also clear its stored access token.
+
+---
+
+## Users Roles and Permissions
+
+Users and roles reuse the [Shared CRUD/state API](10-Alcedo.Framework.Shared.md#expose-an-api). Their prefixes are `/api/v1/identity/users` and `/api/v1/identity/roles`; newly created records begin in Draft and need enabling for ordinary access.
+
+A typical setup sequence is:
+
+1. Query `GET /api/v1/identity/perms` to obtain the actual endpoint keys.
+2. Create a role, assign the required keys, and enable the role.
+3. Create a user, assign the enabled role, and enable the user.
+4. Log in as that user and verify permitted and denied endpoints.
+
+Additional assignment operations use JSON arrays:
+
+```text
+PATCH /api/v1/identity/roles/{id}/role-perms:assign   ["area.resource.operation"]
+PATCH /api/v1/identity/roles/{id}/role-perms:delete   ["area.resource.operation"]
+PATCH /api/v1/identity/roles/{id}/role-perms:clear
+PATCH /api/v1/identity/users/{id}/user-roles:assign   ["ROLE_GUID"]
+PATCH /api/v1/identity/users/{id}/user-roles:delete   ["ROLE_GUID"]
+PATCH /api/v1/identity/users/{id}/user-roles:clear
+```
+
+Non-root permission assignment is constrained by the operator's own effective permissions; it is not a mechanism to grant arbitrary access the operator does not have. User domain methods also reject several self-targeted administrative changes.
+
+Permission changes propagate through cache-refresh events. For an explicitly requested immediate role-cache refresh, use `PUT /api/v1/identity/roles/{id}/cache:refresh`; a user can request `POST /api/v1/identity/auth/cache:refresh` for their own user cache. Both still need their applicable authentication/authorization checks.
+
+---
+
+## Protect a Business API
+
+Use a Framework API base and stable resource/operation names:
 
 ```csharp
-public class UserCacheDto
+using Alcedo.Core.Presentation;
+using Alcedo.Framework.Shared.Controller;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
+
+[Area("catalog")]
+[ApiVersion("1.0")]
+[Resource("Products", "Product catalog")]
+public sealed class ProductsController : AlcedoFmApiAreaControllerBase
 {
-    public Guid Id { get; set; }
-    public string LoginName { get; set; }
-    public string Name { get; set; }
-    public Guid? CurrentSession { get; set; }
-    public List<Guid> RoleIds { get; set; }
-    public bool IsRootUser { get; set; }
-    public bool CanAccessContext { get; set; }
+    [HttpGet]
+    [Operation("List", "List products")]
+    public IActionResult List() => Ok(new { message = "Authorized" });
 }
 ```
 
-### RoleCacheDto (Redis)
+Its route is `/api/v1/catalog/products` and its endpoint permission key is `catalog.products.list`. `EndpointResourceOperationCenter` builds lowercase `{area}.{resource}.{operation}` keys (or `{resource}.{operation}` without an area) from controller metadata. It scans code; there is no required database permission seeder or `PermEntity` inventory to create first.
 
-```csharp
-public class RoleCacheDto
-{
-    public Guid RoleId { get; set; }
-    public bool IsEnabled { get; set; }
-    public HashSet<string> AllowedEndpoints { get; set; }
-}
-```
+Register the controller's owning module so endpoint scanning sees it. Keep permission names stable when evolving endpoints. Use `[AllowAnonymous]` only for an intentionally public action. Add `[SkipPermissionCheck]` for an authenticated self-service action that should not require a separate role permission.
 
-### JWT Claims
+---
 
-| Claim | Source | Purpose |
-|-------|--------|---------|
-| `currentSession` | `UserAgg.CurrentSession` | Tied to a single login session; invalidated on logout or concurrent login |
-| `NameIdentifier` | `UserAgg.Id` | User identity |
-| `Name` | `UserAgg.LoginName` | Display name |
+## Profile and Account Operations
+
+Under `/api/v1/identity/auth`:
+
+- `GET /profile` returns the current user's profile.
+- `POST /password:change` accepts `oldPassword` and `newPassword`; the domain clears the current session, so sign in again afterward.
+- `PATCH /twofactor:enable` returns an authenticator setup URI.
+- `PATCH /twofactor:disable` disables the current user's TOTP.
+
+The current TOTP enable operation persists the secret immediately; it is not a pending setup/confirm-code API. The disable operation relies on the current session rather than requiring a separate password/TOTP body. Design the client workflow around those actual behaviors.
+
+Administrative user operations include `POST /users/{id}/password:reset`, `PATCH /users/{id}/status:lock`, `PATCH /users/{id}/status:unlock`, `PATCH /users/{id}/status:archive`, and `PATCH /users/{id}/twofactor:disable`, all under `/api/v1/identity`.
+
+---
+
+## Troubleshooting and Further Reading
+
+- **401 with an unexpired JWT**: inspect session replacement, account eligibility, and cookie/refresh state. `exp` alone does not prove the session is valid.
+- **403 for an ordinary user**: check enabled roles, actual endpoint keys from `/perms`, and cache propagation. A root request bypasses this check.
+- **Refresh cookie missing**: inspect HTTPS, `CookieSecureOnly`, SameSite behavior, CORS, and client credentials. Do not disable secure cookies for a deployed HTTPS environment merely to mask an origin mismatch.
+- **Duplicate POST rejected**: create a fresh `X-Idempotency-Key` for a new operation.
+- **TOTP secret cannot be read after configuration changes**: the encrypted column depends on `AlcedoColumnEncryptorOptions.Key`; replacing that key does not migrate existing ciphertext.
+
+See [Identity Contracts](../../../Src/Framework/Backend/Alcedo.Framework.Identity.Contracts), [AuthController](../../../Src/Framework/Backend/Alcedo.Framework.Identity/Controller/AuthController.cs), [Shared Controller Bases](../../../Src/Framework/Backend/Alcedo.Framework.Shared/Controller/AlcedoFrameworkApiControllerBase.cs), and the [Testing Strategy](../../Testing/00-Testing-Strategy.md) for the existing API verification scope.
