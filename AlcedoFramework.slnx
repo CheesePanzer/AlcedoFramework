@@ -57,7 +57,12 @@
     <Project Path="Tests/Core/Backend/Alcedo.Core.Presentation.Test/Alcedo.Core.Presentation.Test.csproj" />
   </Folder>
   <Folder Name="/Tests/Framework/" />
+  <Folder Name="/Tests/Core/Frontend/">
+    <Project Path="Tests/Core/Frontend/Alcedo.Frontend.Abstraction.Test/Alcedo.Frontend.Abstraction.Test.csproj" />
+  </Folder>
   <Folder Name="/Tests/Framework/Backend/">
+    <Project Path="Tests/Framework/Backend/Alcedo.Framework.FormulaEngine.Test/Alcedo.Framework.FormulaEngine.Test.csproj" />
+    <Project Path="Tests/Framework/Backend/Alcedo.Framework.Notification.Test/Alcedo.Framework.Notification.Test.csproj" />
     <Project Path="Tests/Framework/Backend/Alcedo.Framework.Identity.Test/Alcedo.Framework.Identity.Test.csproj" />
   </Folder>
 </Solution>
